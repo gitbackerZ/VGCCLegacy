@@ -1,0 +1,22 @@
+{
+  "regulation": "M-B",
+  "season_end": "2026-09-09",
+  "notes": "Nearly all Pokémon transferable via Pokémon HOME are legal. No species are banned this season.",
+  "excluded_pokemon": [],
+  "mega_eligible": [
+    "garchomp",
+    "lucario",
+    "sceptile",
+    "mawile",
+    "gholdengo",
+    "grimmsnarl",
+    "annihilape",
+    "eelektross",
+    "pyroar",
+    "raichu"
+  ],
+  "mega_excluded_forms": [
+    "Mega Lucario Z",
+    "Mega Garchomp Z"
+  ]
+}
