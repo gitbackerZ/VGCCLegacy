@@ -95,3 +95,4 @@ class PokeApiService {
     _cachedHeldItems = heldItems.toList()..sort();
     return _cachedHeldItems!;
   }
+}
