@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 
 class PokeApiService {
   static const String baseUrl = 'https://pokeapi.co/api/v2';
+  List<String>? _cachedHeldItems;
 
   Future<Map<String, dynamic>> getPokemon(String name) async {
     final response = await http.get(
@@ -67,4 +68,30 @@ class PokeApiService {
       'isHidden': a['is_hidden'] as bool,
     }).toList();
   }
-}
+
+  Future<List<String>> getHeldItemNames() async {
+    if (_cachedHeldItems != null) return _cachedHeldItems!;
+
+    final Set<String> heldItems = {};
+    final pocketResponse = await http.get(
+      Uri.parse('$baseUrl/item-pocket/held-items'),
+    );
+    if (pocketResponse.statusCode == 200) {
+      final pocketData = json.decode(pocketResponse.body);
+      final categories = pocketData['categories'] as List;
+      for (final cat in categories) {
+        final catUrl = cat['url'] as String;
+        final catResponse = await http.get(Uri.parse(catUrl));
+        if (catResponse.statusCode == 200) {
+          final catData = json.decode(catResponse.body);
+          final items = catData['items'] as List;
+          for (final item in items) {
+            heldItems.add((item['name'] as String).replaceAll('-', ' '));
+          }
+        }
+      }
+    }
+
+    _cachedHeldItems = heldItems.toList()..sort();
+    return _cachedHeldItems!;
+  }
