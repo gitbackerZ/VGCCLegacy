@@ -28,7 +28,6 @@ class PokeApiService {
   }
 
   Future<List<String>> getAllSpeciesNames() async {
-    // PokéAPI's full species list, paginated at 2000 to grab them all in one call
     final response = await http.get(
       Uri.parse('$baseUrl/pokemon-species?limit=2000'),
     );
@@ -39,5 +38,24 @@ class PokeApiService {
     } else {
       throw Exception('Could not load species list');
     }
+  }
+
+  Future<List<String>> getMovesForPokemon(String name) async {
+    final data = await getPokemon(name);
+    final moves = data['moves'] as List;
+    return moves
+        .map((m) => m['move']['name'] as String)
+        .toList()
+      ..sort();
+  }
+
+  Future<Map<String, int>> getBaseStats(String name) async {
+    final data = await getPokemon(name);
+    final stats = data['stats'] as List;
+    final Map<String, int> result = {};
+    for (final s in stats) {
+      result[s['stat']['name']] = s['base_stat'];
+    }
+    return result;
   }
 }
