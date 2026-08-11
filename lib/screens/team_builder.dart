@@ -54,7 +54,7 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
 
       setState(() {
         _allSpecies = species.where((s) => !_excludedPokemon.contains(s)).toList();
-        _filtered = _allSpecies;
+        _filtered = []; // start empty — only populate when searching
         _loading = false;
       });
     } catch (e) {
@@ -67,9 +67,13 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
 
   void _filter(String query) {
     setState(() {
-      _filtered = _allSpecies
-          .where((p) => p.toLowerCase().contains(query.toLowerCase()))
-          .toList();
+      if (query.trim().isEmpty) {
+        _filtered = [];
+      } else {
+        _filtered = _allSpecies
+            .where((p) => p.toLowerCase().contains(query.toLowerCase()))
+            .toList();
+      }
     });
   }
 
@@ -225,20 +229,30 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
             ),
           const Divider(),
           Expanded(
-            child: ListView.builder(
-              itemCount: _filtered.length,
-              itemBuilder: (context, index) {
-                final name = _filtered[index];
-                return Semantics(
-                  button: true,
-                  label: 'Add $name to team',
-                  child: ListTile(
-                    title: Text(name),
-                    onTap: () => _addToTeam(name),
+            child: _searchController.text.trim().isEmpty
+                ? const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(24.0),
+                      child: Text(
+                        'Start typing above to search for Pokémon.',
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  )
+                : ListView.builder(
+                    itemCount: _filtered.length,
+                    itemBuilder: (context, index) {
+                      final name = _filtered[index];
+                      return Semantics(
+                        button: true,
+                        label: 'Add $name to team',
+                        child: ListTile(
+                          title: Text(name),
+                          onTap: () => _addToTeam(name),
+                        ),
+                      );
+                    },
                   ),
-                );
-              },
-            ),
           ),
         ],
       ),
