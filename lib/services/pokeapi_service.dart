@@ -72,23 +72,38 @@ class PokeApiService {
   Future<List<String>> getHeldItemNames() async {
     if (_cachedHeldItems != null) return _cachedHeldItems!;
 
+    final categoriesToFetch = [
+      'held-items',
+      'choice',
+      'type-enhancement',
+      'species-specific',
+      'stat-boosts',
+      'baking-only',
+      'plates',
+      'z-crystals',
+      'in-a-pinch',
+      'jewels',
+      'mega-stones',
+      'spelunking',
+    ];
+
     final Set<String> heldItems = {};
-    final pocketResponse = await http.get(
-      Uri.parse('$baseUrl/item-pocket/held-items'),
-    );
-    if (pocketResponse.statusCode == 200) {
-      final pocketData = json.decode(pocketResponse.body);
-      final categories = pocketData['categories'] as List;
-      for (final cat in categories) {
-        final catUrl = cat['url'] as String;
-        final catResponse = await http.get(Uri.parse(catUrl));
-        if (catResponse.statusCode == 200) {
-          final catData = json.decode(catResponse.body);
-          final items = catData['items'] as List;
+
+    for (final category in categoriesToFetch) {
+      try {
+        final response = await http.get(
+          Uri.parse('$baseUrl/item-category/$category'),
+        );
+        if (response.statusCode == 200) {
+          final data = json.decode(response.body);
+          final items = data['items'] as List;
           for (final item in items) {
             heldItems.add((item['name'] as String).replaceAll('-', ' '));
           }
         }
+      } catch (e) {
+        // Skip categories that fail; don't let one bad category break the whole list.
+        continue;
       }
     }
 
