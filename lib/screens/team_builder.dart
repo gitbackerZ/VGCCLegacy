@@ -415,53 +415,69 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          ListTile(
-            title: Text(member.name.toUpperCase()),
-            subtitle: Text('${member.heldItem ?? "No item"} • ${member.nature} • EVs: ${member.evTotal}/510'),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (eligible)
-                  Semantics(
-                    button: true,
-                    label: member.isMega
-                        ? 'Disable Mega Evolution for ${member.name}'
-                        : 'Enable Mega Evolution for ${member.name}',
-                    child: IconButton(
-                      icon: Icon(member.isMega ? Icons.star : Icons.star_border),
-                      onPressed: () => _toggleMega(index),
-                    ),
-                  ),
-                Semantics(
-                  button: true,
-                  label: 'Show stats for ${member.name}',
-                  child: IconButton(
-                    icon: const Icon(Icons.bar_chart),
-                    onPressed: () => _showStats(index),
-                  ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 8, 4),
+            child: Semantics(
+              button: true,
+              label: 'Edit held item for ${member.name}. Currently ${member.heldItem ?? "no item"}.',
+              child: InkWell(
+                onTap: () => _showItemDialog(index),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(member.name.toUpperCase(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    const SizedBox(height: 2),
+                    Text('${member.heldItem ?? "No item"} • ${member.nature} • EVs: ${member.evTotal}/510'),
+                  ],
                 ),
-                Semantics(
-                  button: true,
-                  label: 'Remove ${member.name} from team',
-                  child: IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => _removeFromTeam(index),
-                  ),
-                ),
-                Semantics(
-                  button: true,
-                  label: isExpanded ? 'Collapse ${member.name} details' : 'Expand ${member.name} details',
-                  child: IconButton(
-                    icon: Icon(isExpanded ? Icons.expand_less : Icons.expand_more),
-                    onPressed: () => _toggleExpanded(index),
-                  ),
-                ),
-              ],
+              ),
             ),
-            onTap: () => _showItemDialog(index),
+          ),
+          Wrap(
+            alignment: WrapAlignment.start,
+            spacing: 4,
+            children: [
+              if (eligible)
+                Semantics(
+                  button: true,
+                  label: member.isMega
+                      ? 'Disable Mega Evolution for ${member.name}'
+                      : 'Enable Mega Evolution for ${member.name}',
+                  child: IconButton(
+                    icon: Icon(member.isMega ? Icons.star : Icons.star_border),
+                    onPressed: () => _toggleMega(index),
+                  ),
+                ),
+              Semantics(
+                button: true,
+                label: 'Show stats for ${member.name}',
+                child: IconButton(
+                  icon: const Icon(Icons.bar_chart),
+                  onPressed: () => _showStats(index),
+                ),
+              ),
+              Semantics(
+                button: true,
+                label: isExpanded ? 'Collapse ${member.name} details' : 'Expand ${member.name} details',
+                child: IconButton(
+                  icon: Icon(isExpanded ? Icons.expand_less : Icons.expand_more),
+                  onPressed: () => _toggleExpanded(index),
+                ),
+              ),
+              Semantics(
+                button: true,
+                label: 'Remove ${member.name} from team',
+                child: IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => _removeFromTeam(index),
+                ),
+              ),
+            ],
           ),
           if (isExpanded) _buildExpandedDetails(index),
+          const SizedBox(height: 4),
         ],
       ),
     );
@@ -576,29 +592,75 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
     );
   }
 
-  void _showItemDialog(int index) {
+  void _showItemDialog(int index) async {
+    List<String> validItems;
+    try {
+      validItems = await _service.getHeldItemNames();
+    } catch (e) {
+      _announce('Could not load valid held items. Check your connection.');
+      return;
+    }
+
+    if (!mounted) return;
+
     final controller = TextEditingController(text: _team[index].heldItem ?? '');
+    String? errorText;
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Held item for ${_team[index].name}'),
-        content: Semantics(
-          label: 'Enter held item name',
-          child: TextField(controller: controller),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () async {
-              await _setHeldItem(index, controller.text.trim());
-              if (context.mounted) Navigator.pop(context);
-            },
-            child: const Text('Save'),
-          ),
-        ],
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            title: Text('Held item for ${_team[index].name}'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Semantics(
+                  label: 'Enter held item name',
+                  textField: true,
+                  child: TextField(
+                    controller: controller,
+                    decoration: InputDecoration(
+                      labelText: 'Held item',
+                      errorText: errorText,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Leave blank for no item. Must match an official held item name.',
+                  style: TextStyle(fontSize: 12),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () async {
+                  final entered = controller.text.trim().toLowerCase();
+                  if (entered.isEmpty) {
+                    await _setHeldItem(index, '');
+                    if (context.mounted) Navigator.pop(context);
+                    return;
+                  }
+                  if (validItems.contains(entered)) {
+                    await _setHeldItem(index, entered);
+                    if (context.mounted) Navigator.pop(context);
+                  } else {
+                    setDialogState(() {
+                      errorText = 'Not a recognized held item name.';
+                    });
+                  }
+                },
+                child: const Text('Save'),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
