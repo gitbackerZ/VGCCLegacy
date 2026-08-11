@@ -58,4 +58,13 @@ class PokeApiService {
     }
     return result;
   }
+
+  Future<List<Map<String, dynamic>>> getAbilitiesForPokemon(String name) async {
+    final data = await getPokemon(name);
+    final abilities = data['abilities'] as List;
+    return abilities.map((a) => {
+      'name': a['ability']['name'] as String,
+      'isHidden': a['is_hidden'] as bool,
+    }).toList();
+  }
 }
