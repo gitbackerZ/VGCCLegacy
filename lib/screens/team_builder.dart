@@ -14,6 +14,7 @@ class TeamMember {
   List<String?> moves;
   String nature;
   Map<String, int> evs;
+  String? ability;
 
   TeamMember({
     required this.name,
@@ -23,6 +24,7 @@ class TeamMember {
     List<String?>? moves,
     this.nature = 'Hardy',
     Map<String, int>? evs,
+    this.ability,
   })  : moves = moves ?? List.filled(4, null),
         evs = evs ?? {'HP': 0, 'Atk': 0, 'Def': 0, 'SpA': 0, 'SpD': 0, 'Spe': 0};
 
@@ -36,6 +38,7 @@ class TeamMember {
         'moves': moves,
         'nature': nature,
         'evs': evs,
+        'ability': ability,
       };
 
   factory TeamMember.fromJson(Map<String, dynamic> json) => TeamMember(
@@ -46,6 +49,7 @@ class TeamMember {
         moves: List<String?>.from(json['moves'] ?? List.filled(4, null)),
         nature: json['nature'] ?? 'Hardy',
         evs: Map<String, int>.from(json['evs'] ?? {'HP': 0, 'Atk': 0, 'Def': 0, 'SpA': 0, 'SpD': 0, 'Spe': 0}),
+        ability: json['ability'],
       );
 }
 
@@ -67,6 +71,7 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
   List<String> _filtered = [];
   List<TeamMember> _team = [];
   Map<int, List<String>> _movesCache = {};
+  Map<int, List<Map<String, dynamic>>> _abilitiesCache = {};
   int? _expandedIndex;
 
   bool _loading = true;
@@ -159,6 +164,7 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
     setState(() {
       _team.removeAt(index);
       _movesCache.remove(index);
+      _abilitiesCache.remove(index);
       if (_expandedIndex == index) _expandedIndex = null;
     });
     await _saveTeam();
@@ -202,12 +208,22 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
     setState(() {
       _expandedIndex = _expandedIndex == index ? null : index;
     });
-    if (_expandedIndex == index && !_movesCache.containsKey(index)) {
-      try {
-        final moves = await _service.getMovesForPokemon(_team[index].name);
-        setState(() => _movesCache[index] = moves);
-      } catch (e) {
-        _announce('Could not load moves for ${_team[index].name}.');
+    if (_expandedIndex == index) {
+      if (!_movesCache.containsKey(index)) {
+        try {
+          final moves = await _service.getMovesForPokemon(_team[index].name);
+          setState(() => _movesCache[index] = moves);
+        } catch (e) {
+          _announce('Could not load moves for ${_team[index].name}.');
+        }
+      }
+      if (!_abilitiesCache.containsKey(index)) {
+        try {
+          final abilities = await _service.getAbilitiesForPokemon(_team[index].name);
+          setState(() => _abilitiesCache[index] = abilities);
+        } catch (e) {
+          _announce('Could not load abilities for ${_team[index].name}.');
+        }
       }
     }
   }
@@ -221,6 +237,12 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
     setState(() => _team[index].nature = nature);
     await _saveTeam();
     _announce('${_team[index].name}\'s nature set to $nature.');
+  }
+
+  Future<void> _setAbility(int index, String ability) async {
+    setState(() => _team[index].ability = ability);
+    await _saveTeam();
+    _announce('${_team[index].name}\'s ability set to $ability.');
   }
 
   Future<void> _setEv(int index, String stat, int value) async {
@@ -448,6 +470,7 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
   Widget _buildExpandedDetails(int index) {
     final member = _team[index];
     final moveOptions = _movesCache[index];
+    final abilityOptions = _abilitiesCache[index];
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -481,6 +504,30 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
               );
             }),
           const SizedBox(height: 16),
+          const Text('Ability', style: TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 4),
+          if (abilityOptions == null)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8),
+              child: CircularProgressIndicator(),
+            )
+          else
+            Semantics(
+              label: 'Ability for ${member.name}',
+              child: DropdownButtonFormField<String>(
+                initialValue: member.ability,
+                isExpanded: true,
+                decoration: const InputDecoration(labelText: 'Ability'),
+                items: abilityOptions.map((a) {
+                  final label = a['isHidden'] ? '${a['name']} (Hidden)' : a['name'];
+                  return DropdownMenuItem<String>(value: a['name'] as String, child: Text(label));
+                }).toList(),
+                onChanged: (value) {
+                  if (value != null) _setAbility(index, value);
+                },
+              ),
+            ),
+          const SizedBox(height: 16),
           const Text('Nature', style: TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 4),
           Semantics(
@@ -506,12 +553,16 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
             return Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),
               child: Semantics(
-                label: '$stat EVs for ${member.name}, currently ${member.evs[stat]}',
+                label: '$stat effort values, currently ${member.evs[stat]} out of 252',
+                textField: true,
                 child: TextFormField(
                   key: ValueKey('${member.name}-$stat-${member.evs[stat]}'),
                   initialValue: member.evs[stat].toString(),
                   keyboardType: TextInputType.number,
-                  decoration: InputDecoration(labelText: stat),
+                  decoration: InputDecoration(
+                    labelText: '$stat EVs',
+                    floatingLabelBehavior: FloatingLabelBehavior.always,
+                  ),
                   onFieldSubmitted: (value) {
                     final parsed = int.tryParse(value) ?? 0;
                     _setEv(index, stat, parsed);
