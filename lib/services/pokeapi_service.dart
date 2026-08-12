@@ -60,6 +60,20 @@ class PokeApiService {
     return result;
   }
 
+  Future<Map<String, int>?> getMegaBaseStats(String name) async {
+    try {
+      final data = await getPokemon('${name.toLowerCase()}-mega');
+      final stats = data['stats'] as List;
+      final Map<String, int> result = {};
+      for (final s in stats) {
+        result[s['stat']['name']] = s['base_stat'];
+      }
+      return result;
+    } catch (e) {
+      return null;
+    }
+  }
+
   Future<List<Map<String, dynamic>>> getAbilitiesForPokemon(String name) async {
     final data = await getPokemon(name);
     final abilities = data['abilities'] as List;
@@ -85,6 +99,10 @@ class PokeApiService {
       'jewels',
       'mega-stones',
       'spelunking',
+      'effort-drop',
+      'medicine',
+      'flute',
+      'vitamins',
     ];
 
     final Set<String> heldItems = {};
@@ -102,7 +120,6 @@ class PokeApiService {
           }
         }
       } catch (e) {
-        // Skip categories that fail; don't let one bad category break the whole list.
         continue;
       }
     }
