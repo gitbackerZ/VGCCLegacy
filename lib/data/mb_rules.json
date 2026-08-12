@@ -1,32 +1,8 @@
 {
   "regulation": "M-B",
   "season_end": "2026-09-09",
-  "notes": "Nearly all Pokémon transferable via Pokémon HOME are legal. No species are banned this season.",
+  "notes": "Nearly all Pokémon transferable via Pokémon HOME are legal. No species are banned this season. Mega Evolution eligibility is checked live against available Mega forms.",
   "excluded_pokemon": [],
-  "mega_eligible": [
-    "garchomp",
-    "lucario",
-    "sceptile",
-    "mawile",
-    "gholdengo",
-    "grimmsnarl",
-    "annihilape",
-    "eelektross",
-    "pyroar",
-    "raichu"
-  ],
-  "mega_stones": {
-    "garchomp": "garchompite",
-    "lucario": "lucarionite",
-    "sceptile": "sceptilite",
-    "mawile": "mawilite",
-    "gholdengo": "gholdengonite",
-    "grimmsnarl": "grimmsnarlite",
-    "annihilape": "annihilapite",
-    "eelektross": "eelektrite",
-    "pyroar": "pyroarite",
-    "raichu": "raichunite"
-  },
   "mega_excluded_forms": [
     "Mega Lucario Z",
     "Mega Garchomp Z"
