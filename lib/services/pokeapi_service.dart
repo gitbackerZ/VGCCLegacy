@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 class PokeApiService {
   static const String baseUrl = 'https://pokeapi.co/api/v2';
   List<String>? _cachedHeldItems;
+  final Map<String, bool> _megaEligibilityCache = {};
 
   Future<Map<String, dynamic>> getPokemon(String name) async {
     final response = await http.get(
@@ -60,18 +61,38 @@ class PokeApiService {
     return result;
   }
 
+  /// Attempts to fetch a Mega form directly by convention: {species}-mega.
+  /// Returns null if no such form exists (i.e. species cannot Mega Evolve,
+  /// or uses a non-standard suffix like -mega-x / -mega-y).
   Future<Map<String, int>?> getMegaBaseStats(String name) async {
-    try {
-      final data = await getPokemon('${name.toLowerCase()}-mega');
-      final stats = data['stats'] as List;
-      final Map<String, int> result = {};
-      for (final s in stats) {
-        result[s['stat']['name']] = s['base_stat'];
+    final lower = name.toLowerCase();
+    for (final suffix in ['-mega', '-mega-x', '-mega-y']) {
+      try {
+        final data = await getPokemon('$lower$suffix');
+        final stats = data['stats'] as List;
+        final Map<String, int> result = {};
+        for (final s in stats) {
+          result[s['stat']['name']] = s['base_stat'];
+        }
+        return result;
+      } catch (e) {
+        continue;
       }
-      return result;
-    } catch (e) {
-      return null;
     }
+    return null;
+  }
+
+  /// Checks (and caches) whether a species has any Mega form at all,
+  /// without needing a hardcoded eligibility list.
+  Future<bool> hasMegaForm(String name) async {
+    final lower = name.toLowerCase();
+    if (_megaEligibilityCache.containsKey(lower)) {
+      return _megaEligibilityCache[lower]!;
+    }
+    final stats = await getMegaBaseStats(lower);
+    final eligible = stats != null;
+    _megaEligibilityCache[lower] = eligible;
+    return eligible;
   }
 
   Future<List<Map<String, dynamic>>> getAbilitiesForPokemon(String name) async {
