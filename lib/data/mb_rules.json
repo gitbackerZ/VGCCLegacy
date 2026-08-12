@@ -15,6 +15,18 @@
     "pyroar",
     "raichu"
   ],
+  "mega_stones": {
+    "garchomp": "garchompite",
+    "lucario": "lucarionite",
+    "sceptile": "sceptilite",
+    "mawile": "mawilite",
+    "gholdengo": "gholdengonite",
+    "grimmsnarl": "grimmsnarlite",
+    "annihilape": "annihilapite",
+    "eelektross": "eelektrite",
+    "pyroar": "pyroarite",
+    "raichu": "raichunite"
+  },
   "mega_excluded_forms": [
     "Mega Lucario Z",
     "Mega Garchomp Z"
