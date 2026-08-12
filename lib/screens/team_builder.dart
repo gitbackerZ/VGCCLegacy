@@ -68,6 +68,7 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
   List<String> _allSpecies = [];
   List<String> _excludedPokemon = [];
   List<String> _megaEligible = [];
+  Map<String, String> _megaStones = {};
   List<String> _filtered = [];
   List<TeamMember> _team = [];
   Map<int, List<String>> _movesCache = {};
@@ -89,6 +90,7 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
       final rules = json.decode(rulesJson);
       _excludedPokemon = List<String>.from(rules['excluded_pokemon']);
       _megaEligible = List<String>.from(rules['mega_eligible']);
+      _megaStones = Map<String, String>.from(rules['mega_stones'] ?? {});
 
       final species = await _service.getAllSpeciesNames();
 
@@ -263,46 +265,66 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
   Future<void> _showStats(int index) async {
     final member = _team[index];
     try {
-      final baseStats = await _service.getBaseStats(member.name);
       final nature = allNatures.firstWhere((n) => n.name == member.nature);
-      final finalStats = StatCalculator.calculate(
-        baseStats: baseStats,
+
+      final normalBaseStats = await _service.getBaseStats(member.name);
+      final normalStats = StatCalculator.calculate(
+        baseStats: normalBaseStats,
         evs: member.evs,
         natureBoosted: nature.boosted ?? '',
         natureLowered: nature.lowered ?? '',
       );
+
+      Map<String, int>? megaStats;
+      final requiredStone = _megaStones[member.name.toLowerCase()];
+      final isMegaValid = member.isMega &&
+          _megaEligible.contains(member.name.toLowerCase()) &&
+          requiredStone != null &&
+          member.heldItem?.toLowerCase() == requiredStone.toLowerCase();
+
+      if (isMegaValid) {
+        final megaBaseStats = await _service.getMegaBaseStats(member.name);
+        if (megaBaseStats != null) {
+          megaStats = StatCalculator.calculate(
+            baseStats: megaBaseStats,
+            evs: member.evs,
+            natureBoosted: nature.boosted ?? '',
+            natureLowered: nature.lowered ?? '',
+          );
+        }
+      }
 
       if (!mounted) return;
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
           title: Text('${member.name.toUpperCase()} — Level 50 Stats'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Nature: ${member.nature}'),
-              const SizedBox(height: 8),
-              const Text('Assumes max IVs (31) at Level 50.', style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic)),
-              const SizedBox(height: 12),
-              ...finalStats.entries.map((e) {
-                final isBoosted = (e.key == 'Atk' && nature.boosted == 'Attack') ||
-                    (e.key == 'Def' && nature.boosted == 'Defense') ||
-                    (e.key == 'SpA' && nature.boosted == 'Sp. Atk') ||
-                    (e.key == 'SpD' && nature.boosted == 'Sp. Def') ||
-                    (e.key == 'Spe' && nature.boosted == 'Speed');
-                final isLowered = (e.key == 'Atk' && nature.lowered == 'Attack') ||
-                    (e.key == 'Def' && nature.lowered == 'Defense') ||
-                    (e.key == 'SpA' && nature.lowered == 'Sp. Atk') ||
-                    (e.key == 'SpD' && nature.lowered == 'Sp. Def') ||
-                    (e.key == 'Spe' && nature.lowered == 'Speed');
-                final suffix = isBoosted ? ' (+)' : (isLowered ? ' (-)' : '');
-                return Semantics(
-                  label: '${e.key}: ${e.value}${isBoosted ? ", boosted by nature" : ""}${isLowered ? ", lowered by nature" : ""}',
-                  child: Text('${e.key}: ${e.value}$suffix'),
-                );
-              }),
-            ],
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Nature: ${member.nature}'),
+                const SizedBox(height: 8),
+                const Text('Assumes max IVs (31) at Level 50.', style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic)),
+                const SizedBox(height: 12),
+                const Text('Base Form', style: TextStyle(fontWeight: FontWeight.bold)),
+                ..._buildStatRows(normalStats, nature),
+                if (megaStats != null) ...[
+                  const SizedBox(height: 16),
+                  const Text('Mega Evolved', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ..._buildStatRows(megaStats, nature),
+                ] else if (member.isMega) ...[
+                  const SizedBox(height: 16),
+                  Text(
+                    requiredStone == null
+                        ? 'Mega stats unavailable: no Mega Stone data on file for this species.'
+                        : 'Mega stats unavailable: hold "$requiredStone" to see Mega stats.',
+                    style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
+                  ),
+                ],
+              ],
+            ),
           ),
           actions: [
             TextButton(
@@ -315,6 +337,26 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
     } catch (e) {
       _announce('Could not load stats for ${member.name}.');
     }
+  }
+
+  List<Widget> _buildStatRows(Map<String, int> stats, Nature nature) {
+    return stats.entries.map((e) {
+      final isBoosted = (e.key == 'Atk' && nature.boosted == 'Attack') ||
+          (e.key == 'Def' && nature.boosted == 'Defense') ||
+          (e.key == 'SpA' && nature.boosted == 'Sp. Atk') ||
+          (e.key == 'SpD' && nature.boosted == 'Sp. Def') ||
+          (e.key == 'Spe' && nature.boosted == 'Speed');
+      final isLowered = (e.key == 'Atk' && nature.lowered == 'Attack') ||
+          (e.key == 'Def' && nature.lowered == 'Defense') ||
+          (e.key == 'SpA' && nature.lowered == 'Sp. Atk') ||
+          (e.key == 'SpD' && nature.lowered == 'Sp. Def') ||
+          (e.key == 'Spe' && nature.lowered == 'Speed');
+      final suffix = isBoosted ? ' (+)' : (isLowered ? ' (-)' : '');
+      return Semantics(
+        label: '${e.key}: ${e.value}${isBoosted ? ", boosted by nature" : ""}${isLowered ? ", lowered by nature" : ""}',
+        child: Text('${e.key}: ${e.value}$suffix'),
+      );
+    }).toList();
   }
 
   void _announce(String message) {
