@@ -67,8 +67,6 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
 
   List<String> _allSpecies = [];
   List<String> _excludedPokemon = [];
-  List<String> _megaEligible = [];
-  Map<String, String> _megaStones = {};
   List<String> _filtered = [];
   List<TeamMember> _team = [];
   Map<int, List<String>> _movesCache = {};
@@ -89,8 +87,6 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
       final rulesJson = await rootBundle.loadString('lib/data/mb_rules.json');
       final rules = json.decode(rulesJson);
       _excludedPokemon = List<String>.from(rules['excluded_pokemon']);
-      _megaEligible = List<String>.from(rules['mega_eligible']);
-      _megaStones = Map<String, String>.from(rules['mega_stones'] ?? {});
 
       final species = await _service.getAllSpeciesNames();
 
@@ -161,6 +157,31 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
     }
   }
 
+  Future<void> _confirmRemoveFromTeam(int index) async {
+    final name = _team[index].name;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Remove Pokémon?'),
+        content: Text('Remove $name from your team? This cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text('Remove $name'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await _removeFromTeam(index);
+    }
+  }
+
   Future<void> _removeFromTeam(int index) async {
     final removed = _team[index].name;
     setState(() {
@@ -186,14 +207,15 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
 
   Future<void> _toggleMega(int index) async {
     final member = _team[index];
-    final isEligible = _megaEligible.contains(member.name.toLowerCase());
-
-    if (!isEligible) {
-      _announce('${member.name} does not have a Mega Evolution in Regulation M-B.');
-      return;
-    }
 
     if (!member.isMega) {
+      _announce('Checking Mega Evolution availability for ${member.name}...');
+      final eligible = await _service.hasMegaForm(member.name);
+      if (!eligible) {
+        _announce('${member.name} does not have a Mega Evolution.');
+        return;
+      }
+
       final alreadyMega = _team.any((m) => m.isMega);
       if (alreadyMega) {
         _announce('Only one Pokémon can Mega Evolve per battle. Un-select the other Mega first.');
@@ -276,13 +298,10 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
       );
 
       Map<String, int>? megaStats;
-      final requiredStone = _megaStones[member.name.toLowerCase()];
-      final isMegaValid = member.isMega &&
-          _megaEligible.contains(member.name.toLowerCase()) &&
-          requiredStone != null &&
-          member.heldItem?.toLowerCase() == requiredStone.toLowerCase();
+      final guessedStone = '${member.name.toLowerCase()}ite';
+      final heldMatchesGuess = member.heldItem?.toLowerCase() == guessedStone;
 
-      if (isMegaValid) {
+      if (member.isMega && heldMatchesGuess) {
         final megaBaseStats = await _service.getMegaBaseStats(member.name);
         if (megaBaseStats != null) {
           megaStats = StatCalculator.calculate(
@@ -317,9 +336,7 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
                 ] else if (member.isMega) ...[
                   const SizedBox(height: 16),
                   Text(
-                    requiredStone == null
-                        ? 'Mega stats unavailable: no Mega Stone data on file for this species.'
-                        : 'Mega stats unavailable: hold "$requiredStone" to see Mega stats.',
+                    'Mega stats unavailable. Try holding "$guessedStone" (best guess) — if that\'s not correct, check the exact stone name in-game or on Victory Road.',
                     style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
                   ),
                 ],
@@ -451,7 +468,6 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
 
   Widget _buildTeamCard(int index) {
     final member = _team[index];
-    final eligible = _megaEligible.contains(member.name.toLowerCase());
     final isExpanded = _expandedIndex == index;
 
     return Card(
@@ -481,17 +497,16 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
             alignment: WrapAlignment.start,
             spacing: 4,
             children: [
-              if (eligible)
-                Semantics(
-                  button: true,
-                  label: member.isMega
-                      ? 'Disable Mega Evolution for ${member.name}'
-                      : 'Enable Mega Evolution for ${member.name}',
-                  child: IconButton(
-                    icon: Icon(member.isMega ? Icons.star : Icons.star_border),
-                    onPressed: () => _toggleMega(index),
-                  ),
+              Semantics(
+                button: true,
+                label: member.isMega
+                    ? 'Disable Mega Evolution for ${member.name}'
+                    : 'Try enabling Mega Evolution for ${member.name}',
+                child: IconButton(
+                  icon: Icon(member.isMega ? Icons.star : Icons.star_border),
+                  onPressed: () => _toggleMega(index),
                 ),
+              ),
               Semantics(
                 button: true,
                 label: 'Show stats for ${member.name}',
@@ -513,7 +528,7 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
                 label: 'Remove ${member.name} from team',
                 child: IconButton(
                   icon: const Icon(Icons.close),
-                  onPressed: () => _removeFromTeam(index),
+                  onPressed: () => _confirmRemoveFromTeam(index),
                 ),
               ),
             ],
