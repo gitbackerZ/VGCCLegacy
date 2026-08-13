@@ -139,28 +139,44 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
     }
 
     try {
-      // Check for regional forms if applicable
-      final regionalForms = await _service.getRegionalFormNames(name);
+      // Fetch all form varieties for this species (gender, regional, form variants)
+      final varieties = await _service.getVarieties(name);
+
+      // Filter out Mega and Gigantamax forms (Megas are toggled on the team card)
+      final selectableVarieties = varieties.where((v) {
+        final String vName = v['pokemon']['name'] as String;
+        return !vName.contains('-mega') && !vName.contains('-gmax');
+      }).map((v) => v['pokemon']['name'] as String).toList();
+
       String selectedFormName = name;
 
-      if (regionalForms.isNotEmpty && mounted) {
+      // If species has multiple forms (regional, gender, or form variants), show dialog
+      if (selectableVarieties.length > 1 && mounted) {
         final chosen = await showDialog<String>(
           context: context,
           builder: (context) => SimpleDialog(
-            title: Text('Select form for ${name.toUpperCase()}'),
-            children: [
-              SimpleDialogOption(
-                onPressed: () => Navigator.pop(context, name),
-                child: Text('Base Form ($name)'),
-              ),
-              ...regionalForms.map((rForm) => SimpleDialogOption(
-                    onPressed: () => Navigator.pop(context, rForm),
-                    child: Text('Regional Form ($rForm)'),
-                  )),
-            ],
+            title: Text('Select Form for ${name.toUpperCase()}'),
+            children: selectableVarieties.map((formName) {
+              final displayName = formName
+                  .split('-')
+                  .map((word) => word.isNotEmpty
+                      ? '${word[0].toUpperCase()}${word.substring(1)}'
+                      : '')
+                  .join(' ');
+
+              return SimpleDialogOption(
+                onPressed: () => Navigator.pop(context, formName),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                  child: Text(displayName, style: const TextStyle(fontSize: 16)),
+                ),
+              );
+            }).toList(),
           ),
         );
-        if (chosen != null) selectedFormName = chosen;
+
+        if (chosen == null) return;
+        selectedFormName = chosen;
       }
 
       final data = await _service.getPokemon(selectedFormName);
@@ -332,16 +348,14 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
           if (allMegaStats.length == 1) {
             selectedMegaBaseStats = allMegaStats.values.first;
           } else {
-            // Dual Mega handling (e.g. charizard-mega-x vs charizard-mega-y)
             for (final entry in allMegaStats.entries) {
-              final formKey = entry.key; // e.g. charizard-mega-x
-              final suffix = formKey.split('-mega-').last; // 'x' or 'y'
+              final formKey = entry.key;
+              final suffix = formKey.split('-mega-').last;
               if (heldLower.endsWith(suffix)) {
                 selectedMegaBaseStats = entry.value;
                 break;
               }
             }
-            // Fallback to first Mega if no item match found
             selectedMegaBaseStats ??= allMegaStats.values.first;
           }
 
