@@ -4,6 +4,7 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/pokeapi_service.dart';
 import '../services/stat_calculator.dart';
+import '../services/team_text_codec.dart';
 import '../data/natures.dart';
 
 class TeamMember {
@@ -76,8 +77,7 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
   List<TeamMember> _team = [];
   final Map<int, List<String>> _movesCache = {};
   final Map<int, List<Map<String, dynamic>>> _abilitiesCache = {};
-  
-  // Track active panel per team member: 'moves', 'details', 'evs', or null
+
   final Map<int, String?> _activePanels = {};
 
   bool _loading = true;
@@ -185,7 +185,11 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
                 onPressed: () => Navigator.pop(context, formName),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 8.0),
-                  child: Text(displayName, style: const TextStyle(fontSize: 16)),
+                  child: Semantics(
+                    button: true,
+                    label: 'Select form $displayName',
+                    child: Text(displayName, style: const TextStyle(fontSize: 16)),
+                  ),
                 ),
               );
             }).toList(),
@@ -517,6 +521,144 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
     }).toList();
   }
 
+  Future<void> _showExportDialog() async {
+    _unfocus();
+    if (_team.isEmpty) {
+      _announce('Your team is empty. Add Pokémon before exporting.');
+      return;
+    }
+    final text = TeamTextCodec.encodeTeam(_team);
+    if (!mounted) return;
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Export Team'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: SingleChildScrollView(
+            child: Semantics(
+              label: 'Team export text, select all and copy',
+              child: SelectableText(text, style: const TextStyle(fontFamily: 'monospace', fontSize: 12)),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+    _unfocus();
+  }
+
+  Future<void> _showImportDialog() async {
+    _unfocus();
+    final controller = TextEditingController();
+    final pastedText = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Import Team'),
+        content: Semantics(
+          label: 'Paste team text here',
+          textField: true,
+          child: TextField(
+            controller: controller,
+            maxLines: 10,
+            decoration: const InputDecoration(
+              hintText: 'Paste exported team text here',
+              border: OutlineInputBorder(),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, controller.text),
+            child: const Text('Parse'),
+          ),
+        ],
+      ),
+    );
+
+    if (pastedText == null || pastedText.trim().isEmpty) {
+      _unfocus();
+      return;
+    }
+
+    List<TeamMember> parsed;
+    try {
+      parsed = TeamTextCodec.decodeTeam(pastedText);
+    } catch (e) {
+      _announce('Could not parse pasted text: ${e.toString()}');
+      _unfocus();
+      return;
+    }
+
+    if (!mounted) return;
+    final mode = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Import Mode'),
+        content: Text('Found ${parsed.length} Pokémon in the pasted text. How should this be applied?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, 'cancel'),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, 'add'),
+            child: const Text('Add to Team'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, 'replace'),
+            child: const Text('Replace Team'),
+          ),
+        ],
+      ),
+    );
+
+    if (mode == null || mode == 'cancel') {
+      _unfocus();
+      return;
+    }
+
+    if (mode == 'replace') {
+      setState(() {
+        _team.clear();
+        _movesCache.clear();
+        _abilitiesCache.clear();
+        _activePanels.clear();
+      });
+    }
+
+    int added = 0;
+    int failed = 0;
+    for (final member in parsed) {
+      if (_team.length >= 6) break;
+      try {
+        final data = await _service.getPokemon(member.name);
+        member.pokedexNumber = data['id'] as int;
+        if (_team.any((m) => m.pokedexNumber == member.pokedexNumber)) {
+          failed++;
+          continue;
+        }
+        setState(() => _team.add(member));
+        added++;
+      } catch (e) {
+        failed++;
+      }
+    }
+
+    await _saveTeam();
+    _announce('Import complete. $added Pokémon added${failed > 0 ? ", $failed failed or skipped" : ""}.');
+    _unfocus();
+  }
+
   void _announce(String message) {
     setState(() => _statusMessage = message);
   }
@@ -533,7 +675,27 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
     return GestureDetector(
       onTap: _unfocus,
       child: Scaffold(
-        appBar: AppBar(title: const Text('Team Builder')),
+        appBar: AppBar(
+          title: const Text('Team Builder'),
+          actions: [
+            Semantics(
+              button: true,
+              label: 'Export team as text',
+              child: IconButton(
+                icon: const Icon(Icons.upload_outlined),
+                onPressed: _showExportDialog,
+              ),
+            ),
+            Semantics(
+              button: true,
+              label: 'Import team from text',
+              child: IconButton(
+                icon: const Icon(Icons.download_outlined),
+                onPressed: _showImportDialog,
+              ),
+            ),
+          ],
+        ),
         body: Column(
           children: [
             Padding(
@@ -632,67 +794,68 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // ANNOUNCER / FINALIZED SUMMARY CONTAINER
           Padding(
             padding: const EdgeInsets.all(12.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      member.name.toUpperCase(),
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
-                    ),
-                    Row(
-                      children: [
-                        if (member.isMega)
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            margin: const EdgeInsets.only(right: 6),
-                            decoration: BoxDecoration(
-                              color: Colors.amber.shade700,
-                              borderRadius: BorderRadius.circular(4),
+            child: Semantics(
+              label:
+                  '${member.name}. Item: ${member.heldItem ?? "none"}. Gender: ${member.gender}. Ability: ${member.ability ?? "none"}. Nature: ${member.nature}. EVs: ${member.evTotal} of 510. Moves: $movesDisplay.${member.isMega ? " Mega Evolution enabled." : ""}',
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        member.name.toUpperCase(),
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+                      ),
+                      Row(
+                        children: [
+                          if (member.isMega)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              margin: const EdgeInsets.only(right: 6),
+                              decoration: BoxDecoration(
+                                color: Colors.amber.shade700,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: const Text(
+                                'MEGA',
+                                style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                              ),
                             ),
-                            child: const Text(
-                              'MEGA',
-                              style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                            ),
+                          Text(
+                            '#${member.pokedexNumber}',
+                            style: TextStyle(color: secondaryTextColor, fontWeight: FontWeight.bold),
                           ),
-                        Text(
-                          '#${member.pokedexNumber}',
-                          style: TextStyle(color: secondaryTextColor, fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 4,
-                  children: [
-                    Text('Item: ${member.heldItem ?? "None"}', style: const TextStyle(fontSize: 13)),
-                    Text('Gender: ${member.gender}', style: const TextStyle(fontSize: 13)),
-                    Text('Ability: ${member.ability ?? "None"}', style: const TextStyle(fontSize: 13)),
-                    Text('Nature: ${member.nature}', style: const TextStyle(fontSize: 13)),
-                    Text('EVs: ${member.evTotal}/510', style: const TextStyle(fontSize: 13)),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'Moves: $movesDisplay',
-                  style: TextStyle(fontSize: 13, color: secondaryTextColor, fontStyle: FontStyle.italic),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 4,
+                    children: [
+                      Text('Item: ${member.heldItem ?? "None"}', style: const TextStyle(fontSize: 13)),
+                      Text('Gender: ${member.gender}', style: const TextStyle(fontSize: 13)),
+                      Text('Ability: ${member.ability ?? "None"}', style: const TextStyle(fontSize: 13)),
+                      Text('Nature: ${member.nature}', style: const TextStyle(fontSize: 13)),
+                      Text('EVs: ${member.evTotal}/510', style: const TextStyle(fontSize: 13)),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Moves: $movesDisplay',
+                    style: TextStyle(fontSize: 13, color: secondaryTextColor, fontStyle: FontStyle.italic),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
             ),
           ),
           Divider(height: 1, color: theme.dividerColor),
-
-          // THEME-ADAPTIVE TOGGLE TOOLBAR
           Container(
             color: theme.colorScheme.surface,
             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
@@ -703,24 +866,34 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
                   icon: Icons.backpack_outlined,
                   label: 'Item',
                   isActive: false,
+                  semanticLabel: 'Edit held item for ${member.name}. Currently ${member.heldItem ?? "no item"}.',
                   onPressed: () => _showItemDialog(index),
                 ),
                 _buildToolbarToggle(
                   icon: Icons.sports_esports_outlined,
                   label: 'Moves',
                   isActive: activePanel == 'moves',
+                  semanticLabel: activePanel == 'moves'
+                      ? 'Collapse moveset editor for ${member.name}'
+                      : 'Expand moveset editor for ${member.name}',
                   onPressed: () => _togglePanel(index, 'moves'),
                 ),
                 _buildToolbarToggle(
                   icon: Icons.tune,
                   label: 'Details',
                   isActive: activePanel == 'details',
+                  semanticLabel: activePanel == 'details'
+                      ? 'Collapse gender, ability, and nature editor for ${member.name}'
+                      : 'Expand gender, ability, and nature editor for ${member.name}',
                   onPressed: () => _togglePanel(index, 'details'),
                 ),
                 _buildToolbarToggle(
                   icon: Icons.bar_chart,
                   label: 'EVs',
                   isActive: activePanel == 'evs',
+                  semanticLabel: activePanel == 'evs'
+                      ? 'Collapse effort value editor for ${member.name}'
+                      : 'Expand effort value editor for ${member.name}',
                   onPressed: () => _togglePanel(index, 'evs'),
                 ),
                 _buildToolbarToggle(
@@ -728,12 +901,16 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
                   label: 'Mega',
                   isActive: member.isMega,
                   activeColor: Colors.amber.shade700,
+                  semanticLabel: member.isMega
+                      ? 'Disable Mega Evolution for ${member.name}'
+                      : 'Try enabling Mega Evolution for ${member.name}',
                   onPressed: () => _toggleMega(index),
                 ),
                 _buildToolbarToggle(
                   icon: Icons.analytics_outlined,
                   label: 'Stats',
                   isActive: false,
+                  semanticLabel: 'Show calculated stats for ${member.name}',
                   onPressed: () => _showStats(index),
                 ),
                 _buildToolbarToggle(
@@ -741,13 +918,12 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
                   label: 'Remove',
                   isActive: false,
                   activeColor: Colors.redAccent,
+                  semanticLabel: 'Remove ${member.name} from team',
                   onPressed: () => _confirmRemoveFromTeam(index),
                 ),
               ],
             ),
           ),
-
-          // ACTIVE CUSTOMIZATION DRAWER PANEL
           if (activePanel != null) ...[
             Divider(height: 1, color: theme.dividerColor),
             Padding(
@@ -766,26 +942,34 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
     required bool isActive,
     Color? activeColor,
     required VoidCallback onPressed,
+    String? semanticLabel,
   }) {
     final colorScheme = Theme.of(context).colorScheme;
     final defaultColor = colorScheme.onSurfaceVariant;
     final color = isActive ? (activeColor ?? colorScheme.primary) : defaultColor;
 
-    return InkWell(
-      onTap: onPressed,
-      borderRadius: BorderRadius.circular(6),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 20, color: color),
-            const SizedBox(height: 2),
-            Text(
-              label,
-              style: TextStyle(fontSize: 11, color: color, fontWeight: isActive ? FontWeight.bold : FontWeight.normal),
+    return Semantics(
+      button: true,
+      label: semanticLabel ?? label,
+      selected: isActive,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(6),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+          child: ExcludeSemantics(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, size: 20, color: color),
+                const SizedBox(height: 2),
+                Text(
+                  label,
+                  style: TextStyle(fontSize: 11, color: color, fontWeight: isActive ? FontWeight.bold : FontWeight.normal),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -807,19 +991,22 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
             ...List.generate(4, (slot) {
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 4),
-                child: DropdownButtonFormField<String>(
-                  initialValue: member.moves[slot],
-                  isExpanded: true,
-                  decoration: InputDecoration(
-                    labelText: 'Move ${slot + 1}',
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                    border: const OutlineInputBorder(),
+                child: Semantics(
+                  label: 'Move slot ${slot + 1} for ${member.name}',
+                  child: DropdownButtonFormField<String>(
+                    initialValue: member.moves[slot],
+                    isExpanded: true,
+                    decoration: InputDecoration(
+                      labelText: 'Move ${slot + 1}',
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      border: const OutlineInputBorder(),
+                    ),
+                    items: [
+                      const DropdownMenuItem(value: null, child: Text('None')),
+                      ...moveOptions.map((m) => DropdownMenuItem(value: m, child: Text(m))),
+                    ],
+                    onChanged: (value) => _setMove(index, slot, value),
                   ),
-                  items: [
-                    const DropdownMenuItem(value: null, child: Text('None')),
-                    ...moveOptions.map((m) => DropdownMenuItem(value: m, child: Text(m))),
-                  ],
-                  onChanged: (value) => _setMove(index, slot, value),
                 ),
               );
             }),
@@ -834,49 +1021,58 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
         children: [
           const Text('Gender, Ability & Nature', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
           const SizedBox(height: 8),
-          DropdownButtonFormField<String>(
-            initialValue: member.gender,
-            isExpanded: true,
-            decoration: const InputDecoration(labelText: 'Gender', border: OutlineInputBorder()),
-            items: const [
-              DropdownMenuItem(value: 'Male', child: Text('Male')),
-              DropdownMenuItem(value: 'Female', child: Text('Female')),
-              DropdownMenuItem(value: 'Genderless', child: Text('Genderless')),
-            ],
-            onChanged: (value) {
-              if (value != null) _setGender(index, value);
-            },
+          Semantics(
+            label: 'Gender for ${member.name}, currently ${member.gender}',
+            child: DropdownButtonFormField<String>(
+              initialValue: member.gender,
+              isExpanded: true,
+              decoration: const InputDecoration(labelText: 'Gender', border: OutlineInputBorder()),
+              items: const [
+                DropdownMenuItem(value: 'Male', child: Text('Male')),
+                DropdownMenuItem(value: 'Female', child: Text('Female')),
+                DropdownMenuItem(value: 'Genderless', child: Text('Genderless')),
+              ],
+              onChanged: (value) {
+                if (value != null) _setGender(index, value);
+              },
+            ),
           ),
           const SizedBox(height: 12),
           if (abilityOptions == null)
             const Center(child: CircularProgressIndicator())
           else
-            DropdownButtonFormField<String>(
-              initialValue: member.ability,
-              isExpanded: true,
-              decoration: const InputDecoration(labelText: 'Ability', border: OutlineInputBorder()),
-              items: abilityOptions.map((a) {
-                final label = a['isHidden'] ? '${a['name']} (Hidden)' : a['name'];
-                return DropdownMenuItem<String>(value: a['name'] as String, child: Text(label));
-              }).toList(),
-              onChanged: (value) {
-                if (value != null) _setAbility(index, value);
-              },
+            Semantics(
+              label: 'Ability for ${member.name}, currently ${member.ability ?? "none"}',
+              child: DropdownButtonFormField<String>(
+                initialValue: member.ability,
+                isExpanded: true,
+                decoration: const InputDecoration(labelText: 'Ability', border: OutlineInputBorder()),
+                items: abilityOptions.map((a) {
+                  final label = a['isHidden'] ? '${a['name']} (Hidden)' : a['name'];
+                  return DropdownMenuItem<String>(value: a['name'] as String, child: Text(label));
+                }).toList(),
+                onChanged: (value) {
+                  if (value != null) _setAbility(index, value);
+                },
+              ),
             ),
           const SizedBox(height: 12),
-          DropdownButtonFormField<String>(
-            initialValue: member.nature,
-            isExpanded: true,
-            decoration: const InputDecoration(labelText: 'Nature', border: OutlineInputBorder()),
-            items: allNatures.map((n) {
-              final desc = n.boosted == null
-                  ? '${n.name} (neutral)'
-                  : '${n.name} (+${n.boosted}, -${n.lowered})';
-              return DropdownMenuItem(value: n.name, child: Text(desc));
-            }).toList(),
-            onChanged: (value) {
-              if (value != null) _setNature(index, value);
-            },
+          Semantics(
+            label: 'Nature for ${member.name}, currently ${member.nature}',
+            child: DropdownButtonFormField<String>(
+              initialValue: member.nature,
+              isExpanded: true,
+              decoration: const InputDecoration(labelText: 'Nature', border: OutlineInputBorder()),
+              items: allNatures.map((n) {
+                final desc = n.boosted == null
+                    ? '${n.name} (neutral)'
+                    : '${n.name} (+${n.boosted}, -${n.lowered})';
+                return DropdownMenuItem(value: n.name, child: Text(desc));
+              }).toList(),
+              onChanged: (value) {
+                if (value != null) _setNature(index, value);
+              },
+            ),
           ),
         ],
       );
@@ -890,26 +1086,36 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text('Effort Values (EVs)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-              Text('${member.evTotal}/510 total', style: TextStyle(color: member.evTotal > 510 ? Colors.red : Theme.of(context).colorScheme.onSurfaceVariant)),
+              Semantics(
+                liveRegion: true,
+                child: Text(
+                  '${member.evTotal}/510 total',
+                  style: TextStyle(color: member.evTotal > 510 ? Colors.red : Theme.of(context).colorScheme.onSurfaceVariant),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 8),
           ...member.evs.keys.map((stat) {
             return Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),
-              child: TextFormField(
-                key: ValueKey('${member.name}-$stat-${member.evs[stat]}'),
-                initialValue: member.evs[stat].toString(),
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: '$stat EVs (0-252)',
-                  border: const OutlineInputBorder(),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              child: Semantics(
+                label: '$stat effort values, currently ${member.evs[stat]} out of 252',
+                textField: true,
+                child: TextFormField(
+                  key: ValueKey('${member.name}-$stat-${member.evs[stat]}'),
+                  initialValue: member.evs[stat].toString(),
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: '$stat EVs (0-252)',
+                    border: const OutlineInputBorder(),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  ),
+                  onFieldSubmitted: (value) {
+                    final parsed = int.tryParse(value) ?? 0;
+                    _setEv(index, stat, parsed);
+                  },
                 ),
-                onFieldSubmitted: (value) {
-                  final parsed = int.tryParse(value) ?? 0;
-                  _setEv(index, stat, parsed);
-                },
               ),
             );
           }),
@@ -945,12 +1151,16 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                TextField(
-                  controller: controller,
-                  decoration: InputDecoration(
-                    labelText: 'Held item name',
-                    errorText: errorText,
-                    border: const OutlineInputBorder(),
+                Semantics(
+                  label: 'Enter held item name',
+                  textField: true,
+                  child: TextField(
+                    controller: controller,
+                    decoration: InputDecoration(
+                      labelText: 'Held item name',
+                      errorText: errorText,
+                      border: const OutlineInputBorder(),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 8),
