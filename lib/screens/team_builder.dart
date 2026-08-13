@@ -67,6 +67,7 @@ class TeamBuilderScreen extends StatefulWidget {
 class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
   final _service = PokeApiService();
   final _searchController = TextEditingController();
+  final _searchFocusNode = FocusNode();
   static const _storageKey = 'saved_team';
 
   List<String> _allSpecies = [];
@@ -75,7 +76,9 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
   List<TeamMember> _team = [];
   final Map<int, List<String>> _movesCache = {};
   final Map<int, List<Map<String, dynamic>>> _abilitiesCache = {};
-  int? _expandedIndex;
+  
+  // Track active panel per team member: 'moves', 'details', 'evs', or null
+  final Map<int, String?> _activePanels = {};
 
   bool _loading = true;
   String _statusMessage = '';
@@ -84,6 +87,18 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
   void initState() {
     super.initState();
     _loadData();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _searchFocusNode.dispose();
+    super.dispose();
+  }
+
+  void _unfocus() {
+    _searchFocusNode.unfocus();
+    FocusScope.of(context).unfocus();
   }
 
   Future<void> _loadData() async {
@@ -137,6 +152,7 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
   }
 
   Future<void> _addToTeam(String name) async {
+    _unfocus();
     if (_team.length >= 6) {
       _announce('Team is full. Maximum of six Pokémon.');
       return;
@@ -184,14 +200,13 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
       final pokedexNumber = data['id'] as int;
 
       if (_team.any((m) => m.pokedexNumber == pokedexNumber)) {
-        _announce('$selectedFormName shares a Pokédex number with a Pokémon already on your team. Not allowed under species clause.');
+        _announce('$selectedFormName shares a Pokédex number with a Pokémon already on your team.');
         return;
       }
 
-      // Pre-fetch abilities and moves to auto-fill defaults
       List<String?> defaultMoves = List.filled(4, null);
       String? defaultAbility;
-      
+
       try {
         final abilities = await _service.getAbilitiesForPokemon(selectedFormName);
         if (abilities.isNotEmpty) {
@@ -206,7 +221,6 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
         }
       } catch (_) {}
 
-      // Infer default gender based on form name
       String defaultGender = 'Male';
       if (selectedFormName.endsWith('-female')) {
         defaultGender = 'Female';
@@ -222,15 +236,20 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
 
       setState(() {
         _team.add(newMember);
+        _searchController.clear();
+        _filtered = [];
       });
       await _saveTeam();
-      _announce('$selectedFormName added to your team with default setup.');
+      _announce('$selectedFormName added to your team.');
     } catch (e) {
       _announce('Could not add $name. Check the name and try again.');
+    } finally {
+      _unfocus();
     }
   }
 
   Future<void> _confirmRemoveFromTeam(int index) async {
+    _unfocus();
     final name = _team[index].name;
     final confirmed = await showDialog<bool>(
       context: context,
@@ -250,6 +269,7 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
       ),
     );
 
+    _unfocus();
     if (confirmed == true) {
       await _removeFromTeam(index);
     }
@@ -261,7 +281,7 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
       _team.removeAt(index);
       _movesCache.remove(index);
       _abilitiesCache.remove(index);
-      if (_expandedIndex == index) _expandedIndex = null;
+      _activePanels.remove(index);
     });
     await _saveTeam();
     _announce('$removed removed from team.');
@@ -270,15 +290,16 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
   Future<void> _setHeldItem(int index, String item) async {
     final duplicate = _team.any((m) => m.heldItem == item && m != _team[index]);
     if (duplicate && item.isNotEmpty) {
-      _announce('Another Pokémon on your team already holds $item. Items cannot be duplicated.');
+      _announce('Another Pokémon on your team already holds $item.');
       return;
     }
     setState(() => _team[index].heldItem = item.isEmpty ? null : item);
     await _saveTeam();
-    _announce('${_team[index].name} is now holding $item.');
+    _announce('${_team[index].name} is now holding ${item.isEmpty ? "no item" : item}.');
   }
 
   Future<void> _toggleMega(int index) async {
+    _unfocus();
     final member = _team[index];
 
     if (!member.isMega) {
@@ -301,26 +322,28 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
     _announce('${member.name} Mega Evolution ${member.isMega ? "enabled" : "disabled"}.');
   }
 
-  Future<void> _toggleExpanded(int index) async {
+  void _togglePanel(int index, String panelName) async {
+    _unfocus();
     setState(() {
-      _expandedIndex = _expandedIndex == index ? null : index;
+      if (_activePanels[index] == panelName) {
+        _activePanels[index] = null;
+      } else {
+        _activePanels[index] = panelName;
+      }
     });
-    if (_expandedIndex == index) {
+
+    if (_activePanels[index] != null) {
       if (!_movesCache.containsKey(index)) {
         try {
           final moves = await _service.getMovesForPokemon(_team[index].name);
           setState(() => _movesCache[index] = moves);
-        } catch (e) {
-          _announce('Could not load moves for ${_team[index].name}.');
-        }
+        } catch (_) {}
       }
       if (!_abilitiesCache.containsKey(index)) {
         try {
           final abilities = await _service.getAbilitiesForPokemon(_team[index].name);
           setState(() => _abilitiesCache[index] = abilities);
-        } catch (e) {
-          _announce('Could not load abilities for ${_team[index].name}.');
-        }
+        } catch (_) {}
       }
     }
   }
@@ -333,19 +356,16 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
   Future<void> _setNature(int index, String nature) async {
     setState(() => _team[index].nature = nature);
     await _saveTeam();
-    _announce('${_team[index].name}\'s nature set to $nature.');
   }
 
   Future<void> _setAbility(int index, String ability) async {
     setState(() => _team[index].ability = ability);
     await _saveTeam();
-    _announce('${_team[index].name}\'s ability set to $ability.');
   }
 
   Future<void> _setGender(int index, String gender) async {
     setState(() => _team[index].gender = gender);
     await _saveTeam();
-    _announce('${_team[index].name}\'s gender set to $gender.');
   }
 
   Future<void> _setEv(int index, String stat, int value) async {
@@ -357,13 +377,23 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
 
     setState(() => member.evs[stat] = finalValue);
     await _saveTeam();
+  }
 
-    if (clamped > maxAllowed) {
-      _announce('EV total capped at 510. $stat set to $finalValue.');
+  bool _isValidMegaItem(String name, String heldItem, String formKey) {
+    if (heldItem.isEmpty) return false;
+    final item = heldItem.toLowerCase().trim();
+
+    if (formKey.contains('-mega-x')) {
+      return item.endsWith('x') && item.contains('ite');
+    } else if (formKey.contains('-mega-y')) {
+      return item.endsWith('y') && item.contains('ite');
+    } else {
+      return item.endsWith('ite') || item == 'red orb' || item == 'blue orb';
     }
   }
 
   Future<void> _showStats(int index) async {
+    _unfocus();
     final member = _team[index];
     try {
       final nature = allNatures.firstWhere((n) => n.name == member.nature);
@@ -377,25 +407,34 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
       );
 
       Map<String, int>? megaStats;
+      String? megaNotice;
 
+      // Only calculate Mega stats if Mega toggle is explicitly ENABLED
       if (member.isMega) {
         final allMegaStats = await _service.getAllMegaBaseStats(member.name);
+        final heldItem = (member.heldItem ?? '').toLowerCase().trim();
+
         if (allMegaStats.isNotEmpty) {
           Map<String, int>? selectedMegaBaseStats;
-          final heldLower = (member.heldItem ?? '').toLowerCase().trim();
 
           if (allMegaStats.length == 1) {
-            selectedMegaBaseStats = allMegaStats.values.first;
+            final formKey = allMegaStats.keys.first;
+            if (_isValidMegaItem(member.name, heldItem, formKey)) {
+              selectedMegaBaseStats = allMegaStats.values.first;
+            } else {
+              megaNotice = 'Equip the correct Mega Stone (e.g. ${member.name}ite) to calculate Mega stats.';
+            }
           } else {
             for (final entry in allMegaStats.entries) {
               final formKey = entry.key;
-              final suffix = formKey.split('-mega-').last;
-              if (heldLower.endsWith(suffix)) {
+              if (_isValidMegaItem(member.name, heldItem, formKey)) {
                 selectedMegaBaseStats = entry.value;
                 break;
               }
             }
-            selectedMegaBaseStats ??= allMegaStats.values.first;
+            if (selectedMegaBaseStats == null) {
+              megaNotice = 'Equip the corresponding Mega Stone (X or Y) to calculate Mega stats.';
+            }
           }
 
           if (selectedMegaBaseStats != null) {
@@ -406,11 +445,13 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
               natureLowered: nature.lowered ?? '',
             );
           }
+        } else {
+          megaNotice = 'No Mega Evolution data found for ${member.name}.';
         }
       }
 
       if (!mounted) return;
-      showDialog(
+      await showDialog(
         context: context,
         builder: (context) => AlertDialog(
           title: Text('${member.name.toUpperCase()} — Level 50 Stats'),
@@ -423,18 +464,21 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
                 const SizedBox(height: 8),
                 const Text('Assumes max IVs (31) at Level 50.', style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic)),
                 const SizedBox(height: 12),
-                const Text('Base Form', style: TextStyle(fontWeight: FontWeight.bold)),
+                const Text('Base Form', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                 ..._buildStatRows(normalStats, nature),
-                if (megaStats != null) ...[
+                if (member.isMega) ...[
                   const SizedBox(height: 16),
-                  const Text('Mega Evolved', style: TextStyle(fontWeight: FontWeight.bold)),
-                  ..._buildStatRows(megaStats, nature),
-                ] else if (member.isMega) ...[
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Mega stats unavailable. Ensure correct Mega Stone is equipped.',
-                    style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
-                  ),
+                  const Text('Mega Evolution', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  if (megaStats != null)
+                    ..._buildStatRows(megaStats, nature)
+                  else
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4.0),
+                      child: Text(
+                        megaNotice ?? 'Mega Stone required.',
+                        style: const TextStyle(color: Colors.orange, fontSize: 13, fontStyle: FontStyle.italic),
+                      ),
+                    ),
                 ],
               ],
             ),
@@ -449,6 +493,8 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
       );
     } catch (e) {
       _announce('Could not load stats for ${member.name}.');
+    } finally {
+      _unfocus();
     }
   }
 
@@ -466,7 +512,7 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
           (e.key == 'Spe' && nature.lowered == 'Speed');
       final suffix = isBoosted ? ' (+)' : (isLowered ? ' (-)' : '');
       return Semantics(
-        label: '${e.key}: ${e.value}${isBoosted ? ", boosted by nature" : ""}${isLowered ? ", lowered by nature" : ""}',
+        label: '${e.key}: ${e.value}${isBoosted ? ", boosted" : ""}${isLowered ? ", lowered" : ""}',
         child: Text('${e.key}: ${e.value}$suffix'),
       );
     }).toList();
@@ -485,286 +531,389 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
       );
     }
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Team Builder')),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: Semantics(
-              label: 'Search Pokémon by name',
-              child: TextField(
-                controller: _searchController,
-                decoration: const InputDecoration(labelText: 'Search Pokémon'),
-                onChanged: _filter,
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12.0),
-            child: Align(
-              alignment: Alignment.centerLeft,
+    return GestureDetector(
+      onTap: _unfocus,
+      child: Scaffold(
+        appBar: AppBar(title: const Text('Team Builder')),
+        body: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(12.0),
               child: Semantics(
-                liveRegion: true,
-                child: Text(
-                  'Your team, ${_team.length} of 6',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
+                label: 'Search Pokémon by name',
+                child: TextField(
+                  controller: _searchController,
+                  focusNode: _searchFocusNode,
+                  autofocus: false,
+                  decoration: const InputDecoration(
+                    labelText: 'Search Pokémon',
+                    prefixIcon: Icon(Icons.search),
+                    border: OutlineInputBorder(),
+                  ),
+                  onChanged: _filter,
                 ),
               ),
             ),
-          ),
-          if (_statusMessage.isNotEmpty)
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 4.0),
-              child: Semantics(
-                liveRegion: true,
-                child: Text(_statusMessage, style: const TextStyle(color: Colors.blue)),
-              ),
-            ),
-          if (_team.isNotEmpty)
-            Expanded(
-              flex: 3,
-              child: ListView.builder(
-                itemCount: _team.length,
-                itemBuilder: (context, index) => _buildTeamCard(index),
-              ),
-            ),
-          const Divider(),
-          Expanded(
-            flex: 2,
-            child: _searchController.text.trim().isEmpty
-                ? const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(24.0),
-                      child: Text(
-                        'Start typing above to search for Pokémon.',
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  )
-                : ListView.builder(
-                    itemCount: _filtered.length,
-                    itemBuilder: (context, index) {
-                      final name = _filtered[index];
-                      return Semantics(
-                        button: true,
-                        label: 'Add $name to team',
-                        child: ListTile(
-                          title: Text(name),
-                          onTap: () => _addToTeam(name),
-                        ),
-                      );
-                    },
+              padding: const EdgeInsets.symmetric(horizontal: 12.0),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Semantics(
+                  liveRegion: true,
+                  child: Text(
+                    'Your team: ${_team.length} of 6 slots filled',
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                   ),
-          ),
-        ],
+                ),
+              ),
+            ),
+            if (_statusMessage.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 4.0),
+                child: Semantics(
+                  liveRegion: true,
+                  child: Text(_statusMessage, style: const TextStyle(color: Colors.blue)),
+                ),
+              ),
+            if (_team.isNotEmpty)
+              Expanded(
+                flex: 3,
+                child: ListView.builder(
+                  itemCount: _team.length,
+                  itemBuilder: (context, index) => _buildTeamCard(index),
+                ),
+              ),
+            const Divider(),
+            Expanded(
+              flex: 2,
+              child: _searchController.text.trim().isEmpty
+                  ? const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(24.0),
+                        child: Text(
+                          'Start typing above to search for Pokémon.',
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    )
+                  : ListView.builder(
+                      itemCount: _filtered.length,
+                      itemBuilder: (context, index) {
+                        final name = _filtered[index];
+                        return Semantics(
+                          button: true,
+                          label: 'Add $name to team',
+                          child: ListTile(
+                            title: Text(name),
+                            onTap: () => _addToTeam(name),
+                          ),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildTeamCard(int index) {
     final member = _team[index];
-    final isExpanded = _expandedIndex == index;
+    final activePanel = _activePanels[index];
+
+    final nonNullMoves = member.moves.where((m) => m != null && m.isNotEmpty).join(', ');
+    final movesDisplay = nonNullMoves.isEmpty ? 'None set' : nonNullMoves;
 
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      elevation: 2,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // ANNOUNCER / FINALIZED SUMMARY CONTAINER
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 8, 4),
-            child: Semantics(
-              button: true,
-              label: 'Edit held item for ${member.name}. Currently ${member.heldItem ?? "no item"}.',
-              child: InkWell(
-                onTap: () => _showItemDialog(index),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+            padding: const EdgeInsets.all(12.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(member.name.toUpperCase(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                    const SizedBox(height: 2),
-                    Text('${member.heldItem ?? "No item"} • ${member.gender} • ${member.nature} • EVs: ${member.evTotal}/510'),
+                    Text(
+                      member.name.toUpperCase(),
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+                    ),
+                    Row(
+                      children: [
+                        if (member.isMega)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            margin: const EdgeInsets.only(right: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.amber.shade700,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: const Text('MEGA', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                          ),
+                        Text(
+                          '#${member.pokedexNumber}',
+                          style: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
-              ),
+                const SizedBox(height: 6),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 4,
+                  children: [
+                    Text('🎒 Item: ${member.heldItem ?? "None"}', style: const TextStyle(fontSize: 13)),
+                    Text('👤 Gender: ${member.gender}', style: const TextStyle(fontSize: 13)),
+                    Text('⚡ Ability: ${member.ability ?? "None"}', style: const TextStyle(fontSize: 13)),
+                    Text('🧠 Nature: ${member.nature}', style: const TextStyle(fontSize: 13)),
+                    Text('📊 EVs: ${member.evTotal}/510', style: const TextStyle(fontSize: 13)),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  '⚔️ Moves: $movesDisplay',
+                  style: TextStyle(fontSize: 13, color: Colors.grey.shade800, fontStyle: FontStyle.italic),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
             ),
           ),
-          Wrap(
-            alignment: WrapAlignment.start,
-            spacing: 4,
-            children: [
-              Semantics(
-                button: true,
-                label: member.isMega
-                    ? 'Disable Mega Evolution for ${member.name}'
-                    : 'Try enabling Mega Evolution for ${member.name}',
-                child: IconButton(
-                  icon: Icon(member.isMega ? Icons.star : Icons.star_border),
+          const Divider(height: 1),
+
+          // DEDICATED TOGGLE TOOLBAR
+          Container(
+            color: Colors.grey.shade50,
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildToolbarToggle(
+                  icon: Icons.backpack_outlined,
+                  label: 'Item',
+                  isActive: false,
+                  onPressed: () => _showItemDialog(index),
+                ),
+                _buildToolbarToggle(
+                  icon: Icons.sports_esports_outlined,
+                  label: 'Moves',
+                  isActive: activePanel == 'moves',
+                  onPressed: () => _togglePanel(index, 'moves'),
+                ),
+                _buildToolbarToggle(
+                  icon: Icons.tune,
+                  label: 'Details',
+                  isActive: activePanel == 'details',
+                  onPressed: () => _togglePanel(index, 'details'),
+                ),
+                _buildToolbarToggle(
+                  icon: Icons.bar_chart,
+                  label: 'EVs',
+                  isActive: activePanel == 'evs',
+                  onPressed: () => _togglePanel(index, 'evs'),
+                ),
+                _buildToolbarToggle(
+                  icon: member.isMega ? Icons.star : Icons.star_border,
+                  label: 'Mega',
+                  isActive: member.isMega,
+                  activeColor: Colors.amber.shade800,
                   onPressed: () => _toggleMega(index),
                 ),
-              ),
-              Semantics(
-                button: true,
-                label: 'Show stats for ${member.name}',
-                child: IconButton(
-                  icon: const Icon(Icons.bar_chart),
+                _buildToolbarToggle(
+                  icon: Icons.analytics_outlined,
+                  label: 'Stats',
+                  isActive: false,
                   onPressed: () => _showStats(index),
                 ),
-              ),
-              Semantics(
-                button: true,
-                label: isExpanded ? 'Collapse ${member.name} details' : 'Expand ${member.name} details',
-                child: IconButton(
-                  icon: Icon(isExpanded ? Icons.expand_less : Icons.expand_more),
-                  onPressed: () => _toggleExpanded(index),
-                ),
-              ),
-              Semantics(
-                button: true,
-                label: 'Remove ${member.name} from team',
-                child: IconButton(
-                  icon: const Icon(Icons.close),
+                _buildToolbarToggle(
+                  icon: Icons.delete_outline,
+                  label: 'Remove',
+                  isActive: false,
+                  activeColor: Colors.red,
                   onPressed: () => _confirmRemoveFromTeam(index),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-          if (isExpanded) _buildExpandedDetails(index),
-          const SizedBox(height: 4),
+
+          // ACTIVE CUSTOMIZATION DRAWER PANEL
+          if (activePanel != null) ...[
+            const Divider(height: 1),
+            Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: _buildPanelContent(index, activePanel),
+            ),
+          ],
         ],
       ),
     );
   }
 
-  Widget _buildExpandedDetails(int index) {
-    final member = _team[index];
-    final moveOptions = _movesCache[index];
-    final abilityOptions = _abilitiesCache[index];
+  Widget _buildToolbarToggle({
+    required IconData icon,
+    required String label,
+    required bool isActive,
+    Color? activeColor,
+    required VoidCallback onPressed,
+  }) {
+    final color = isActive ? (activeColor ?? Theme.of(context).primaryColor) : Colors.grey.shade700;
+    return InkWell(
+      onTap: onPressed,
+      borderRadius: BorderRadius.circular(6),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 20, color: color),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: TextStyle(fontSize: 11, color: color, fontWeight: isActive ? FontWeight.bold : FontWeight.normal),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      child: Column(
+  Widget _buildPanelContent(int index, String panelName) {
+    final member = _team[index];
+
+    if (panelName == 'moves') {
+      final moveOptions = _movesCache[index];
+      return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Gender', style: TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 4),
-          Semantics(
-            label: 'Gender for ${member.name}',
-            child: DropdownButtonFormField<String>(
-              initialValue: member.gender,
-              isExpanded: true,
-              decoration: const InputDecoration(labelText: 'Gender'),
-              items: const [
-                DropdownMenuItem(value: 'Male', child: Text('Male')),
-                DropdownMenuItem(value: 'Female', child: Text('Female')),
-                DropdownMenuItem(value: 'Genderless', child: Text('Genderless')),
-              ],
-              onChanged: (value) {
-                if (value != null) _setGender(index, value);
-              },
-            ),
-          ),
-          const SizedBox(height: 16),
-          const Text('Moves', style: TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 4),
+          const Text('Configure Moveset', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+          const SizedBox(height: 8),
           if (moveOptions == null)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 8),
-              child: CircularProgressIndicator(),
-            )
+            const Center(child: CircularProgressIndicator())
           else
             ...List.generate(4, (slot) {
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Semantics(
-                  label: 'Move slot ${slot + 1} for ${member.name}',
-                  child: DropdownButtonFormField<String>(
-                    initialValue: member.moves[slot],
-                    isExpanded: true,
-                    decoration: InputDecoration(labelText: 'Move ${slot + 1}'),
-                    items: [
-                      const DropdownMenuItem(value: null, child: Text('None')),
-                      ...moveOptions.map((m) => DropdownMenuItem(value: m, child: Text(m))),
-                    ],
-                    onChanged: (value) => _setMove(index, slot, value),
+                child: DropdownButtonFormField<String>(
+                  initialValue: member.moves[slot],
+                  isExpanded: true,
+                  decoration: InputDecoration(
+                    labelText: 'Move ${slot + 1}',
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    border: const OutlineInputBorder(),
                   ),
+                  items: [
+                    const DropdownMenuItem(value: null, child: Text('None')),
+                    ...moveOptions.map((m) => DropdownMenuItem(value: m, child: Text(m))),
+                  ],
+                  onChanged: (value) => _setMove(index, slot, value),
                 ),
               );
             }),
-          const SizedBox(height: 16),
-          const Text('Ability', style: TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 4),
+        ],
+      );
+    }
+
+    if (panelName == 'details') {
+      final abilityOptions = _abilitiesCache[index];
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Gender, Ability & Nature', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+          const SizedBox(height: 8),
+          DropdownButtonFormField<String>(
+            initialValue: member.gender,
+            isExpanded: true,
+            decoration: const InputDecoration(labelText: 'Gender', border: OutlineInputBorder()),
+            items: const [
+              DropdownMenuItem(value: 'Male', child: Text('Male')),
+              DropdownMenuItem(value: 'Female', child: Text('Female')),
+              DropdownMenuItem(value: 'Genderless', child: Text('Genderless')),
+            ],
+            onChanged: (value) {
+              if (value != null) _setGender(index, value);
+            },
+          ),
+          const SizedBox(height: 12),
           if (abilityOptions == null)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 8),
-              child: CircularProgressIndicator(),
-            )
+            const Center(child: CircularProgressIndicator())
           else
-            Semantics(
-              label: 'Ability for ${member.name}',
-              child: DropdownButtonFormField<String>(
-                initialValue: member.ability,
-                isExpanded: true,
-                decoration: const InputDecoration(labelText: 'Ability'),
-                items: abilityOptions.map((a) {
-                  final label = a['isHidden'] ? '${a['name']} (Hidden)' : a['name'];
-                  return DropdownMenuItem<String>(value: a['name'] as String, child: Text(label));
-                }).toList(),
-                onChanged: (value) {
-                  if (value != null) _setAbility(index, value);
-                },
-              ),
-            ),
-          const SizedBox(height: 16),
-          const Text('Nature', style: TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 4),
-          Semantics(
-            label: 'Nature for ${member.name}',
-            child: DropdownButtonFormField<String>(
-              initialValue: member.nature,
+            DropdownButtonFormField<String>(
+              initialValue: member.ability,
               isExpanded: true,
-              items: allNatures.map((n) {
-                final desc = n.boosted == null
-                    ? '${n.name} (neutral)'
-                    : '${n.name} (+${n.boosted}, -${n.lowered})';
-                return DropdownMenuItem(value: n.name, child: Text(desc));
+              decoration: const InputDecoration(labelText: 'Ability', border: OutlineInputBorder()),
+              items: abilityOptions.map((a) {
+                final label = a['isHidden'] ? '${a['name']} (Hidden)' : a['name'];
+                return DropdownMenuItem<String>(value: a['name'] as String, child: Text(label));
               }).toList(),
               onChanged: (value) {
-                if (value != null) _setNature(index, value);
+                if (value != null) _setAbility(index, value);
               },
             ),
+          const SizedBox(height: 12),
+          DropdownButtonFormField<String>(
+            initialValue: member.nature,
+            isExpanded: true,
+            decoration: const InputDecoration(labelText: 'Nature', border: OutlineInputBorder()),
+            items: allNatures.map((n) {
+              final desc = n.boosted == null
+                  ? '${n.name} (neutral)'
+                  : '${n.name} (+${n.boosted}, -${n.lowered})';
+              return DropdownMenuItem(value: n.name, child: Text(desc));
+            }).toList(),
+            onChanged: (value) {
+              if (value != null) _setNature(index, value);
+            },
           ),
-          const SizedBox(height: 16),
-          Text('EVs (${member.evTotal}/510)', style: const TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 4),
+        ],
+      );
+    }
+
+    if (panelName == 'evs') {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Effort Values (EVs)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+              Text('${member.evTotal}/510 total', style: TextStyle(color: member.evTotal > 510 ? Colors.red : Colors.grey.shade800)),
+            ],
+          ),
+          const SizedBox(height: 8),
           ...member.evs.keys.map((stat) {
             return Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Semantics(
-                label: '$stat effort values, currently ${member.evs[stat]} out of 252',
-                textField: true,
-                child: TextFormField(
-                  key: ValueKey('${member.name}-$stat-${member.evs[stat]}'),
-                  initialValue: member.evs[stat].toString(),
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    labelText: '$stat EVs',
-                    floatingLabelBehavior: FloatingLabelBehavior.always,
-                  ),
-                  onFieldSubmitted: (value) {
-                    final parsed = int.tryParse(value) ?? 0;
-                    _setEv(index, stat, parsed);
-                  },
+              child: TextFormField(
+                key: ValueKey('${member.name}-$stat-${member.evs[stat]}'),
+                initialValue: member.evs[stat].toString(),
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: '$stat EVs (0-252)',
+                  border: const OutlineInputBorder(),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                 ),
+                onFieldSubmitted: (value) {
+                  final parsed = int.tryParse(value) ?? 0;
+                  _setEv(index, stat, parsed);
+                },
               ),
             );
           }),
         ],
-      ),
-    );
+      );
+    }
+
+    return const SizedBox.shrink();
   }
 
   void _showItemDialog(int index) async {
+    _unfocus();
     List<String> validItems;
     try {
       validItems = await _service.getHeldItemNames();
@@ -778,30 +927,27 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
     final controller = TextEditingController(text: _team[index].heldItem ?? '');
     String? errorText;
 
-    showDialog(
+    await showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) {
           return AlertDialog(
-            title: Text('Held item for ${_team[index].name}'),
+            title: Text('Held Item for ${_team[index].name}'),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Semantics(
-                  label: 'Enter held item name',
-                  textField: true,
-                  child: TextField(
-                    controller: controller,
-                    decoration: InputDecoration(
-                      labelText: 'Held item',
-                      errorText: errorText,
-                    ),
+                TextField(
+                  controller: controller,
+                  decoration: InputDecoration(
+                    labelText: 'Held item name',
+                    errorText: errorText,
+                    border: const OutlineInputBorder(),
                   ),
                 ),
                 const SizedBox(height: 8),
                 const Text(
-                  'Leave blank for no item. Must match an official held item name.',
+                  'Leave blank for no item. Must match an official held item name (e.g. choice band, charizardite x).',
                   style: TextStyle(fontSize: 12),
                 ),
               ],
@@ -835,5 +981,7 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
         },
       ),
     );
+
+    _unfocus();
   }
 }
