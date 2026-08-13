@@ -15,6 +15,7 @@ class TeamMember {
   String nature;
   Map<String, int> evs;
   String? ability;
+  String gender;
 
   TeamMember({
     required this.name,
@@ -25,6 +26,7 @@ class TeamMember {
     this.nature = 'Hardy',
     Map<String, int>? evs,
     this.ability,
+    this.gender = 'Male',
   })  : moves = moves ?? List.filled(4, null),
         evs = evs ?? {'HP': 0, 'Atk': 0, 'Def': 0, 'SpA': 0, 'SpD': 0, 'Spe': 0};
 
@@ -39,6 +41,7 @@ class TeamMember {
         'nature': nature,
         'evs': evs,
         'ability': ability,
+        'gender': gender,
       };
 
   factory TeamMember.fromJson(Map<String, dynamic> json) => TeamMember(
@@ -50,6 +53,7 @@ class TeamMember {
         nature: json['nature'] ?? 'Hardy',
         evs: Map<String, int>.from(json['evs'] ?? {'HP': 0, 'Atk': 0, 'Def': 0, 'SpA': 0, 'SpD': 0, 'Spe': 0}),
         ability: json['ability'],
+        gender: json['gender'] ?? 'Male',
       );
 }
 
@@ -139,10 +143,8 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
     }
 
     try {
-      // Fetch all form varieties for this species (gender, regional, form variants)
       final varieties = await _service.getVarieties(name);
 
-      // Filter out Mega and Gigantamax forms (Megas are toggled on the team card)
       final selectableVarieties = varieties.where((v) {
         final String vName = v['pokemon']['name'] as String;
         return !vName.contains('-mega') && !vName.contains('-gmax');
@@ -150,7 +152,6 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
 
       String selectedFormName = name;
 
-      // If species has multiple forms (regional, gender, or form variants), show dialog
       if (selectableVarieties.length > 1 && mounted) {
         final chosen = await showDialog<String>(
           context: context,
@@ -187,11 +188,43 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
         return;
       }
 
+      // Pre-fetch abilities and moves to auto-fill defaults
+      List<String?> defaultMoves = List.filled(4, null);
+      String? defaultAbility;
+      
+      try {
+        final abilities = await _service.getAbilitiesForPokemon(selectedFormName);
+        if (abilities.isNotEmpty) {
+          defaultAbility = abilities.first['name'] as String;
+        }
+      } catch (_) {}
+
+      try {
+        final moves = await _service.getMovesForPokemon(selectedFormName);
+        for (int i = 0; i < 4 && i < moves.length; i++) {
+          defaultMoves[i] = moves[i];
+        }
+      } catch (_) {}
+
+      // Infer default gender based on form name
+      String defaultGender = 'Male';
+      if (selectedFormName.endsWith('-female')) {
+        defaultGender = 'Female';
+      }
+
+      final newMember = TeamMember(
+        name: selectedFormName,
+        pokedexNumber: pokedexNumber,
+        ability: defaultAbility,
+        moves: defaultMoves,
+        gender: defaultGender,
+      );
+
       setState(() {
-        _team.add(TeamMember(name: selectedFormName, pokedexNumber: pokedexNumber));
+        _team.add(newMember);
       });
       await _saveTeam();
-      _announce('$selectedFormName added to your team. ${_team.length} of 6 slots filled.');
+      _announce('$selectedFormName added to your team with default setup.');
     } catch (e) {
       _announce('Could not add $name. Check the name and try again.');
     }
@@ -309,6 +342,12 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
     _announce('${_team[index].name}\'s ability set to $ability.');
   }
 
+  Future<void> _setGender(int index, String gender) async {
+    setState(() => _team[index].gender = gender);
+    await _saveTeam();
+    _announce('${_team[index].name}\'s gender set to $gender.');
+  }
+
   Future<void> _setEv(int index, String stat, int value) async {
     final member = _team[index];
     final clamped = value.clamp(0, 252);
@@ -380,7 +419,7 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Nature: ${member.nature}'),
+                Text('Gender: ${member.gender} • Nature: ${member.nature}'),
                 const SizedBox(height: 8),
                 const Text('Assumes max IVs (31) at Level 50.', style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic)),
                 const SizedBox(height: 12),
@@ -544,7 +583,7 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
                   children: [
                     Text(member.name.toUpperCase(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                     const SizedBox(height: 2),
-                    Text('${member.heldItem ?? "No item"} • ${member.nature} • EVs: ${member.evTotal}/510'),
+                    Text('${member.heldItem ?? "No item"} • ${member.gender} • ${member.nature} • EVs: ${member.evTotal}/510'),
                   ],
                 ),
               ),
@@ -607,6 +646,25 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const Text('Gender', style: TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 4),
+          Semantics(
+            label: 'Gender for ${member.name}',
+            child: DropdownButtonFormField<String>(
+              initialValue: member.gender,
+              isExpanded: true,
+              decoration: const InputDecoration(labelText: 'Gender'),
+              items: const [
+                DropdownMenuItem(value: 'Male', child: Text('Male')),
+                DropdownMenuItem(value: 'Female', child: Text('Female')),
+                DropdownMenuItem(value: 'Genderless', child: Text('Genderless')),
+              ],
+              onChanged: (value) {
+                if (value != null) _setGender(index, value);
+              },
+            ),
+          ),
+          const SizedBox(height: 16),
           const Text('Moves', style: TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 4),
           if (moveOptions == null)
