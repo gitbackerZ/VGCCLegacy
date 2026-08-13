@@ -409,7 +409,6 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
       Map<String, int>? megaStats;
       String? megaNotice;
 
-      // Only calculate Mega stats if Mega toggle is explicitly ENABLED
       if (member.isMega) {
         final allMegaStats = await _service.getAllMegaBaseStats(member.name);
         final heldItem = (member.heldItem ?? '').toLowerCase().trim();
@@ -624,6 +623,9 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
     final nonNullMoves = member.moves.where((m) => m != null && m.isNotEmpty).join(', ');
     final movesDisplay = nonNullMoves.isEmpty ? 'None set' : nonNullMoves;
 
+    final theme = Theme.of(context);
+    final secondaryTextColor = theme.textTheme.bodySmall?.color ?? Colors.grey;
+
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       elevation: 2,
@@ -653,11 +655,14 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
                               color: Colors.amber.shade700,
                               borderRadius: BorderRadius.circular(4),
                             ),
-                            child: const Text('MEGA', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                            child: const Text(
+                              'MEGA',
+                              style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                            ),
                           ),
                         Text(
                           '#${member.pokedexNumber}',
-                          style: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.bold),
+                          style: TextStyle(color: secondaryTextColor, fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
@@ -668,29 +673,29 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
                   spacing: 12,
                   runSpacing: 4,
                   children: [
-                    Text('🎒 Item: ${member.heldItem ?? "None"}', style: const TextStyle(fontSize: 13)),
-                    Text('👤 Gender: ${member.gender}', style: const TextStyle(fontSize: 13)),
-                    Text('⚡ Ability: ${member.ability ?? "None"}', style: const TextStyle(fontSize: 13)),
-                    Text('🧠 Nature: ${member.nature}', style: const TextStyle(fontSize: 13)),
-                    Text('📊 EVs: ${member.evTotal}/510', style: const TextStyle(fontSize: 13)),
+                    Text('Item: ${member.heldItem ?? "None"}', style: const TextStyle(fontSize: 13)),
+                    Text('Gender: ${member.gender}', style: const TextStyle(fontSize: 13)),
+                    Text('Ability: ${member.ability ?? "None"}', style: const TextStyle(fontSize: 13)),
+                    Text('Nature: ${member.nature}', style: const TextStyle(fontSize: 13)),
+                    Text('EVs: ${member.evTotal}/510', style: const TextStyle(fontSize: 13)),
                   ],
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  '⚔️ Moves: $movesDisplay',
-                  style: TextStyle(fontSize: 13, color: Colors.grey.shade800, fontStyle: FontStyle.italic),
+                  'Moves: $movesDisplay',
+                  style: TextStyle(fontSize: 13, color: secondaryTextColor, fontStyle: FontStyle.italic),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
           ),
-          const Divider(height: 1),
+          Divider(height: 1, color: theme.dividerColor),
 
-          // DEDICATED TOGGLE TOOLBAR
+          // THEME-ADAPTIVE TOGGLE TOOLBAR
           Container(
-            color: Colors.grey.shade50,
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+            color: theme.colorScheme.surface,
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
@@ -722,7 +727,7 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
                   icon: member.isMega ? Icons.star : Icons.star_border,
                   label: 'Mega',
                   isActive: member.isMega,
-                  activeColor: Colors.amber.shade800,
+                  activeColor: Colors.amber.shade700,
                   onPressed: () => _toggleMega(index),
                 ),
                 _buildToolbarToggle(
@@ -735,7 +740,7 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
                   icon: Icons.delete_outline,
                   label: 'Remove',
                   isActive: false,
-                  activeColor: Colors.red,
+                  activeColor: Colors.redAccent,
                   onPressed: () => _confirmRemoveFromTeam(index),
                 ),
               ],
@@ -744,7 +749,7 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
 
           // ACTIVE CUSTOMIZATION DRAWER PANEL
           if (activePanel != null) ...[
-            const Divider(height: 1),
+            Divider(height: 1, color: theme.dividerColor),
             Padding(
               padding: const EdgeInsets.all(12.0),
               child: _buildPanelContent(index, activePanel),
@@ -762,7 +767,10 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
     Color? activeColor,
     required VoidCallback onPressed,
   }) {
-    final color = isActive ? (activeColor ?? Theme.of(context).primaryColor) : Colors.grey.shade700;
+    final colorScheme = Theme.of(context).colorScheme;
+    final defaultColor = colorScheme.onSurfaceVariant;
+    final color = isActive ? (activeColor ?? colorScheme.primary) : defaultColor;
+
     return InkWell(
       onTap: onPressed,
       borderRadius: BorderRadius.circular(6),
@@ -882,7 +890,7 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text('Effort Values (EVs)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-              Text('${member.evTotal}/510 total', style: TextStyle(color: member.evTotal > 510 ? Colors.red : Colors.grey.shade800)),
+              Text('${member.evTotal}/510 total', style: TextStyle(color: member.evTotal > 510 ? Colors.red : Theme.of(context).colorScheme.onSurfaceVariant)),
             ],
           ),
           const SizedBox(height: 8),
