@@ -40,7 +40,7 @@ class PokeApiService {
     }
   }
 
-  Future<MoveData> getMove(String name) async {
+  Future<Map<String, dynamic>> getMove(String name) async {
     final formatted = name.toLowerCase().replaceAll(' ', '-');
     final response = await http.get(
       Uri.parse('$baseUrl/move/$formatted'),
@@ -76,9 +76,15 @@ class PokeApiService {
     return varieties.cast<Map<String, dynamic>>();
   }
 
-  /// Fetches base stats for all Mega forms associated with a species (e.g. Charizard Mega X & Y).
-  /// Returns a Map of form name to stats map.
-  Future<Map<String, Map<String, int>>> getMegaBaseStats(String name) async {
+  /// Returns base stats for the primary Mega form (compatible with team_builder.dart).
+  Future<Map<String, int>?> getMegaBaseStats(String name) async {
+    final allMegas = await getAllMegaBaseStats(name);
+    if (allMegas.isEmpty) return null;
+    return allMegas.values.first;
+  }
+
+  /// Fetches base stats for ALL Mega forms associated with a species (e.g., Charizard Mega X & Y).
+  Future<Map<String, Map<String, int>>> getAllMegaBaseStats(String name) async {
     final Map<String, Map<String, int>> results = {};
     try {
       final varieties = await getVarieties(name);
@@ -105,7 +111,7 @@ class PokeApiService {
       return _megaEligibilityCache[lower]!;
     }
     final megaStats = await getMegaBaseStats(lower);
-    final eligible = megaStats.isNotEmpty;
+    final eligible = megaStats != null;
     _megaEligibilityCache[lower] = eligible;
     return eligible;
   }
