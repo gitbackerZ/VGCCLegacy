@@ -69,8 +69,8 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
   List<String> _excludedPokemon = [];
   List<String> _filtered = [];
   List<TeamMember> _team = [];
-  Map<int, List<String>> _movesCache = {};
-  Map<int, List<Map<String, dynamic>>> _abilitiesCache = {};
+  final Map<int, List<String>> _movesCache = {};
+  final Map<int, List<Map<String, dynamic>>> _abilitiesCache = {};
   int? _expandedIndex;
 
   bool _loading = true;
@@ -139,19 +139,43 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
     }
 
     try {
-      final data = await _service.getPokemon(name);
+      // Check for regional forms if applicable
+      final regionalForms = await _service.getRegionalFormNames(name);
+      String selectedFormName = name;
+
+      if (regionalForms.isNotEmpty && mounted) {
+        final chosen = await showDialog<String>(
+          context: context,
+          builder: (context) => SimpleDialog(
+            title: Text('Select form for ${name.toUpperCase()}'),
+            children: [
+              SimpleDialogOption(
+                onPressed: () => Navigator.pop(context, name),
+                child: Text('Base Form ($name)'),
+              ),
+              ...regionalForms.map((rForm) => SimpleDialogOption(
+                    onPressed: () => Navigator.pop(context, rForm),
+                    child: Text('Regional Form ($rForm)'),
+                  )),
+            ],
+          ),
+        );
+        if (chosen != null) selectedFormName = chosen;
+      }
+
+      final data = await _service.getPokemon(selectedFormName);
       final pokedexNumber = data['id'] as int;
 
       if (_team.any((m) => m.pokedexNumber == pokedexNumber)) {
-        _announce('$name shares a Pokédex number with a Pokémon already on your team. Not allowed under species clause.');
+        _announce('$selectedFormName shares a Pokédex number with a Pokémon already on your team. Not allowed under species clause.');
         return;
       }
 
       setState(() {
-        _team.add(TeamMember(name: name, pokedexNumber: pokedexNumber));
+        _team.add(TeamMember(name: selectedFormName, pokedexNumber: pokedexNumber));
       });
       await _saveTeam();
-      _announce('$name added to your team. ${_team.length} of 6 slots filled.');
+      _announce('$selectedFormName added to your team. ${_team.length} of 6 slots filled.');
     } catch (e) {
       _announce('Could not add $name. Check the name and try again.');
     }
@@ -298,18 +322,37 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
       );
 
       Map<String, int>? megaStats;
-      final guessedStone = '${member.name.toLowerCase()}ite';
-      final heldMatchesGuess = member.heldItem?.toLowerCase() == guessedStone;
 
-      if (member.isMega && heldMatchesGuess) {
-        final megaBaseStats = await _service.getMegaBaseStats(member.name);
-        if (megaBaseStats != null) {
-          megaStats = StatCalculator.calculate(
-            baseStats: megaBaseStats,
-            evs: member.evs,
-            natureBoosted: nature.boosted ?? '',
-            natureLowered: nature.lowered ?? '',
-          );
+      if (member.isMega) {
+        final allMegaStats = await _service.getAllMegaBaseStats(member.name);
+        if (allMegaStats.isNotEmpty) {
+          Map<String, int>? selectedMegaBaseStats;
+          final heldLower = (member.heldItem ?? '').toLowerCase().trim();
+
+          if (allMegaStats.length == 1) {
+            selectedMegaBaseStats = allMegaStats.values.first;
+          } else {
+            // Dual Mega handling (e.g. charizard-mega-x vs charizard-mega-y)
+            for (final entry in allMegaStats.entries) {
+              final formKey = entry.key; // e.g. charizard-mega-x
+              final suffix = formKey.split('-mega-').last; // 'x' or 'y'
+              if (heldLower.endsWith(suffix)) {
+                selectedMegaBaseStats = entry.value;
+                break;
+              }
+            }
+            // Fallback to first Mega if no item match found
+            selectedMegaBaseStats ??= allMegaStats.values.first;
+          }
+
+          if (selectedMegaBaseStats != null) {
+            megaStats = StatCalculator.calculate(
+              baseStats: selectedMegaBaseStats,
+              evs: member.evs,
+              natureBoosted: nature.boosted ?? '',
+              natureLowered: nature.lowered ?? '',
+            );
+          }
         }
       }
 
@@ -335,9 +378,9 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
                   ..._buildStatRows(megaStats, nature),
                 ] else if (member.isMega) ...[
                   const SizedBox(height: 16),
-                  Text(
-                    'Mega stats unavailable. Try holding "$guessedStone" (best guess) — if that\'s not correct, check the exact stone name in-game or on Victory Road.',
-                    style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
+                  const Text(
+                    'Mega stats unavailable. Ensure correct Mega Stone is equipped.',
+                    style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
                   ),
                 ],
               ],
