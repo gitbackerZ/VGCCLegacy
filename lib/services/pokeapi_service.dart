@@ -4,19 +4,6 @@ import 'package:http/http.dart' as http;
 class PokeApiService {
   static const String baseUrl = 'https://pokeapi.co/api/v2';
   List<String>? _cachedHeldItems;
-  final Map<String, bool> _megaEligibilityCache = {};
-
-  /// Regional tags used in PokéAPI form identifiers
-  static const List<String> regionalSuffixes = [
-    '-alola',
-    '-galar',
-    '-hisui',
-    '-paldea',
-  ];
-
-  // ==========================================
-  // Core Pokémon & Species Endpoints
-  // ==========================================
 
   Future<Map<String, dynamic>> getPokemon(String name) async {
     final response = await http.get(
@@ -65,25 +52,31 @@ class PokeApiService {
     }
   }
 
-  // ==========================================
-  // Variety & Form Fetching
-  // ==========================================
+  /// Returns gender_rate: -1 = genderless, 0 = always male, 8 = always female,
+  /// otherwise a female-chance ratio out of 8 (both genders possible).
+  Future<int> getGenderRate(String name) async {
+    // Species-level data applies even to forms; strip common form suffixes first.
+    String baseName = name.toLowerCase().trim();
+    for (final suffix in ['-mega-x', '-mega-y', '-mega', '-gmax', '-female', '-male']) {
+      if (baseName.endsWith(suffix)) {
+        baseName = baseName.substring(0, baseName.length - suffix.length);
+        break;
+      }
+    }
+    try {
+      final data = await getPokemonSpecies(baseName);
+      return data['gender_rate'] as int;
+    } catch (e) {
+      return 4; // fallback: assume both genders possible
+    }
+  }
 
-  /// Returns all form varieties listed under a species payload.
   Future<List<Map<String, dynamic>>> getVarieties(String speciesName) async {
     final speciesData = await getPokemonSpecies(speciesName);
     final List<dynamic> varieties = speciesData['varieties'] ?? [];
     return varieties.cast<Map<String, dynamic>>();
   }
 
-  /// Returns base stats for the primary Mega form (compatible with team_builder.dart).
-  Future<Map<String, int>?> getMegaBaseStats(String name) async {
-    final allMegas = await getAllMegaBaseStats(name);
-    if (allMegas.isEmpty) return null;
-    return allMegas.values.first;
-  }
-
-  /// Fetches base stats for ALL Mega forms associated with a species (e.g., Charizard Mega X & Y).
   Future<Map<String, Map<String, int>>> getAllMegaBaseStats(String name) async {
     final Map<String, Map<String, int>> results = {};
     try {
@@ -103,55 +96,6 @@ class PokeApiService {
     }
     return results;
   }
-
-  /// Checks (and caches) whether a species has any Mega form at all.
-  Future<bool> hasMegaForm(String name) async {
-    final lower = name.toLowerCase().trim();
-    if (_megaEligibilityCache.containsKey(lower)) {
-      return _megaEligibilityCache[lower]!;
-    }
-    final megaStats = await getMegaBaseStats(lower);
-    final eligible = megaStats != null;
-    _megaEligibilityCache[lower] = eligible;
-    return eligible;
-  }
-
-  /// Fetches form names for regional variants (e.g. ['sneasel-hisui']).
-  Future<List<String>> getRegionalFormNames(String speciesName) async {
-    try {
-      final varieties = await getVarieties(speciesName);
-      return varieties
-          .map((v) => v['pokemon']['name'] as String)
-          .where((formName) =>
-              regionalSuffixes.any((suffix) => formName.contains(suffix)))
-          .toList();
-    } catch (_) {
-      return [];
-    }
-  }
-
-  /// Returns gender information, including distinct forms (e.g. Meowstic Female)
-  /// and whether the base form has sprite-level gender differences.
-  Future<GenderFormInfo> getGenderFormInfo(String speciesName) async {
-    final speciesData = await getPokemonSpecies(speciesName);
-    final bool hasGenderDifferences =
-        speciesData['has_gender_differences'] ?? false;
-    final List<dynamic> varieties = speciesData['varieties'] ?? [];
-
-    final genderVarieties = varieties
-        .map((v) => v['pokemon']['name'] as String)
-        .where((n) => n.contains('-female') || n.contains('-male'))
-        .toList();
-
-    return GenderFormInfo(
-      hasSpriteDifferences: hasGenderDifferences,
-      distinctGenderFormNames: genderVarieties,
-    );
-  }
-
-  // ==========================================
-  // Stat & Details Helpers
-  // ==========================================
 
   Future<List<String>> getMovesForPokemon(String name) async {
     final data = await getPokemon(name);
@@ -224,15 +168,4 @@ class PokeApiService {
     _cachedHeldItems = heldItems.toList()..sort();
     return _cachedHeldItems!;
   }
-}
-
-/// Simple model for gender difference results
-class GenderFormInfo {
-  final bool hasSpriteDifferences;
-  final List<String> distinctGenderFormNames;
-
-  GenderFormInfo({
-    required this.hasSpriteDifferences,
-    required this.distinctGenderFormNames,
-  });
 }
