@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show rootBundle, Clipboard, ClipboardData;
+import 'package:flutter/services.dart' show rootBundle, Clipboard, ClipboardData, FilteringTextInputFormatter;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/pokeapi_service.dart';
 import '../services/stat_calculator.dart';
@@ -81,6 +81,16 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
   final Map<int, String?> _activePanels = {};
   final Set<int> _collapsedCards = {}; // cards that are collapsed (summary only)
 
+  // Stable EV editors: controllers are created when the EV panel opens and
+  // only write back to the model when the field loses focus / editing completes.
+  final Map<int, Map<String, TextEditingController>> _evControllers = {};
+  final Map<int, Map<String, FocusNode>> _evFocusNodes = {};
+
+  // Held-item text fields (one per team member), committed on focus loss.
+  final Map<int, TextEditingController> _itemControllers = {};
+  final Map<int, FocusNode> _itemFocusNodes = {};
+  List<String>? _cachedValidItems;
+
   bool _loading = true;
   String _statusMessage = '';
 
@@ -94,7 +104,154 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
   void dispose() {
     _searchController.dispose();
     _searchFocusNode.dispose();
+    _disposeAllEvControllers();
     super.dispose();
+  }
+
+  void _disposeAllEvControllers() {
+    for (final map in _evControllers.values) {
+      for (final c in map.values) {
+        c.dispose();
+      }
+    }
+    _evControllers.clear();
+    for (final map in _evFocusNodes.values) {
+      for (final n in map.values) {
+        n.dispose();
+      }
+    }
+    _evFocusNodes.clear();
+    for (final c in _itemControllers.values) {
+      c.dispose();
+    }
+    _itemControllers.clear();
+    for (final n in _itemFocusNodes.values) {
+      n.dispose();
+    }
+    _itemFocusNodes.clear();
+  }
+
+  void _disposeEvControllersForIndex(int index) {
+    final controllers = _evControllers.remove(index);
+    if (controllers != null) {
+      for (final c in controllers.values) {
+        c.dispose();
+      }
+    }
+    final nodes = _evFocusNodes.remove(index);
+    if (nodes != null) {
+      for (final n in nodes.values) {
+        n.dispose();
+      }
+    }
+    _itemControllers.remove(index)?.dispose();
+    _itemFocusNodes.remove(index)?.dispose();
+  }
+
+  /// Ensure controllers exist for this team member and are in sync with model values.
+  void _ensureEvControllers(int index) {
+    final member = _team[index];
+    final existing = _evControllers[index];
+    if (existing != null) {
+      // Keep text in sync if the model changed externally (e.g. import)
+      for (final stat in member.evs.keys) {
+        final c = existing[stat];
+        if (c != null && c.text != member.evs[stat].toString()) {
+          c.text = member.evs[stat].toString();
+        }
+      }
+      return;
+    }
+
+    final controllers = <String, TextEditingController>{};
+    final nodes = <String, FocusNode>{};
+    for (final stat in member.evs.keys) {
+      final controller = TextEditingController(text: member.evs[stat].toString());
+      final focusNode = FocusNode();
+      focusNode.addListener(() {
+        if (!focusNode.hasFocus) {
+          _commitEv(index, stat);
+        }
+      });
+      controllers[stat] = controller;
+      nodes[stat] = focusNode;
+    }
+    _evControllers[index] = controllers;
+    _evFocusNodes[index] = nodes;
+  }
+
+  /// Parse the controller text, clamp, enforce 510 total, call _setEv, and
+  /// rewrite the controller so it shows the final accepted value.
+  void _commitEv(int index, String stat) {
+    final controllers = _evControllers[index];
+    if (controllers == null) return;
+    final controller = controllers[stat];
+    if (controller == null) return;
+
+    final parsed = int.tryParse(controller.text.trim()) ?? 0;
+    _setEv(index, stat, parsed);
+
+    // Reflect the clamped value back into the field without fighting the cursor
+    // while the user is still typing (we only get here on focus loss).
+    final accepted = _team[index].evs[stat]!.toString();
+    if (controller.text != accepted) {
+      controller.text = accepted;
+      controller.selection = TextSelection.collapsed(offset: accepted.length);
+    }
+  }
+
+  void _ensureItemController(int index) {
+    if (_itemControllers.containsKey(index)) {
+      final current = _team[index].heldItem ?? '';
+      if (_itemControllers[index]!.text != current) {
+        _itemControllers[index]!.text = current;
+      }
+      return;
+    }
+    final controller =
+        TextEditingController(text: _team[index].heldItem ?? '');
+    final focusNode = FocusNode();
+    focusNode.addListener(() {
+      if (!focusNode.hasFocus) {
+        _commitHeldItem(index);
+      }
+    });
+    _itemControllers[index] = controller;
+    _itemFocusNodes[index] = focusNode;
+  }
+
+  Future<void> _commitHeldItem(int index) async {
+    final controller = _itemControllers[index];
+    if (controller == null) return;
+    final raw = controller.text.trim().toLowerCase();
+
+    if (raw.isEmpty) {
+      await _setHeldItem(index, '');
+      return;
+    }
+
+    try {
+      _cachedValidItems ??= await _service.getHeldItemNames();
+      final normalizedSlug = raw.replaceAll(' ', '-');
+      final normalizedSpace = raw.replaceAll('-', ' ');
+      final isMatch = _cachedValidItems!.any((item) {
+        final clean = item.toLowerCase();
+        return clean == raw ||
+            clean == normalizedSlug ||
+            clean == normalizedSpace;
+      });
+      if (isMatch) {
+        await _setHeldItem(index, raw);
+        // Reflect whatever was accepted (may be unchanged on clause violation)
+        controller.text = _team[index].heldItem ?? '';
+      } else {
+        _announce('Not a recognized held item name.');
+        controller.text = _team[index].heldItem ?? '';
+      }
+    } catch (_) {
+      _announce('Could not validate held item. Check your connection.');
+      controller.text = _team[index].heldItem ?? '';
+    }
   }
 
   void _unfocus() {
@@ -262,7 +419,9 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
       _abilitiesCache.remove(index);
       _activePanels.remove(index);
       _collapsedCards.remove(index);
-      // Re-key collapsed/panel sets since indices shift after removal
+      _disposeEvControllersForIndex(index);
+
+      // Re-key maps that are keyed by team index
       final newCollapsed = <int>{};
       for (final i in _collapsedCards) {
         newCollapsed.add(i > index ? i - 1 : i);
@@ -270,6 +429,49 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
       _collapsedCards
         ..clear()
         ..addAll(newCollapsed);
+
+      // Re-key EV controllers / focus nodes
+      final newEvControllers = <int, Map<String, TextEditingController>>{};
+      final newEvFocusNodes = <int, Map<String, FocusNode>>{};
+      for (final entry in _evControllers.entries) {
+        final i = entry.key;
+        if (i == index) continue; // already disposed
+        final newKey = i > index ? i - 1 : i;
+        newEvControllers[newKey] = entry.value;
+      }
+      for (final entry in _evFocusNodes.entries) {
+        final i = entry.key;
+        if (i == index) continue;
+        final newKey = i > index ? i - 1 : i;
+        newEvFocusNodes[newKey] = entry.value;
+      }
+      _evControllers
+        ..clear()
+        ..addAll(newEvControllers);
+      _evFocusNodes
+        ..clear()
+        ..addAll(newEvFocusNodes);
+
+      final newItemControllers = <int, TextEditingController>{};
+      final newItemFocusNodes = <int, FocusNode>{};
+      for (final entry in _itemControllers.entries) {
+        final i = entry.key;
+        if (i == index) continue;
+        final newKey = i > index ? i - 1 : i;
+        newItemControllers[newKey] = entry.value;
+      }
+      for (final entry in _itemFocusNodes.entries) {
+        final i = entry.key;
+        if (i == index) continue;
+        final newKey = i > index ? i - 1 : i;
+        newItemFocusNodes[newKey] = entry.value;
+      }
+      _itemControllers
+        ..clear()
+        ..addAll(newItemControllers);
+      _itemFocusNodes
+        ..clear()
+        ..addAll(newItemFocusNodes);
     });
     await _saveTeam();
     _announce('$removed removed from team.');
@@ -318,6 +520,12 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
     });
 
     if (_activePanels[index] != null) {
+      if (panelName == 'evs') {
+        _ensureEvControllers(index);
+      }
+      if (panelName == 'details') {
+        _ensureItemController(index);
+      }
       if (!_movesCache.containsKey(index)) {
         try {
           final moves = await _service.getMovesForPokemon(_team[index].name);
@@ -326,7 +534,8 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
       }
       if (!_abilitiesCache.containsKey(index)) {
         try {
-          final abilities = await _service.getAbilitiesForPokemon(_team[index].name);
+          final abilities =
+              await _service.getAbilitiesForPokemon(_team[index].name);
           setState(() => _abilitiesCache[index] = abilities);
         } catch (_) {}
       }
@@ -764,11 +973,11 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
                   controller: _searchController,
                   focusNode: _searchFocusNode,
                   autofocus: false,
-                  decoration: const InputDecoration(
-                    labelText: 'Search Pokémon',
-                    prefixIcon: Icon(Icons.search),
-                    border: OutlineInputBorder(),
-                    isDense: true,
+                  style: const TextStyle(color: Colors.white),
+                  cursorColor: Colors.white,
+                  decoration: _inverseInputDecoration('Search Pokémon').copyWith(
+                    prefixIcon:
+                        const Icon(Icons.search, color: Colors.white70),
                   ),
                   onChanged: _filter,
                 ),
@@ -926,20 +1135,13 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
             ),
             Divider(height: 1, color: theme.dividerColor),
             Container(
-              color: theme.colorScheme.surface,
-              padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+              color: Colors.black,
+              padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   _buildToolbarToggle(
-                    icon: Icons.backpack_outlined,
-                    label: 'Item',
-                    isActive: false,
-                    semanticLabel: 'Edit held item for ${member.name}. Currently ${member.heldItem ?? "no item"}.',
-                    onPressed: () => _showItemDialog(index),
-                  ),
-                  _buildToolbarToggle(
-                    icon: Icons.sports_esports_outlined,
+                    emoji: '⚔️',
                     label: 'Moves',
                     isActive: activePanel == 'moves',
                     semanticLabel: activePanel == 'moves'
@@ -948,16 +1150,16 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
                     onPressed: () => _togglePanel(index, 'moves'),
                   ),
                   _buildToolbarToggle(
-                    icon: Icons.tune,
+                    emoji: '⚙️',
                     label: 'Details',
                     isActive: activePanel == 'details',
                     semanticLabel: activePanel == 'details'
-                        ? 'Collapse gender, ability, and nature editor for ${member.name}'
-                        : 'Expand gender, ability, and nature editor for ${member.name}',
+                        ? 'Collapse held item, gender, ability, and nature editor for ${member.name}'
+                        : 'Expand held item, gender, ability, and nature editor for ${member.name}',
                     onPressed: () => _togglePanel(index, 'details'),
                   ),
                   _buildToolbarToggle(
-                    icon: Icons.bar_chart,
+                    emoji: '📊',
                     label: 'EVs',
                     isActive: activePanel == 'evs',
                     semanticLabel: activePanel == 'evs'
@@ -966,7 +1168,7 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
                     onPressed: () => _togglePanel(index, 'evs'),
                   ),
                   _buildToolbarToggle(
-                    icon: Icons.analytics_outlined,
+                    emoji: '📈',
                     label: 'Stats',
                     isActive: false,
                     semanticLabel: 'Show calculated stats for ${member.name}',
@@ -977,9 +1179,14 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
             ),
             if (activePanel != null) ...[
               Divider(height: 1, color: theme.dividerColor),
-              Padding(
+              Container(
+                color: Colors.black87,
+                width: double.infinity,
                 padding: const EdgeInsets.all(10.0),
-                child: _buildPanelContent(index, activePanel),
+                child: DefaultTextStyle(
+                  style: const TextStyle(color: Colors.white),
+                  child: _buildPanelContent(index, activePanel),
+                ),
               ),
             ],
           ],
@@ -989,16 +1196,15 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
   }
 
   Widget _buildToolbarToggle({
-    required IconData icon,
+    required String emoji,
     required String label,
     required bool isActive,
     Color? activeColor,
     required VoidCallback onPressed,
     String? semanticLabel,
   }) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final defaultColor = colorScheme.onSurfaceVariant;
-    final color = isActive ? (activeColor ?? colorScheme.primary) : defaultColor;
+    // Pure white emoji on dark background; slight highlight when active.
+    final Color bg = isActive ? Colors.white24 : Colors.transparent;
 
     return Semantics(
       button: true,
@@ -1006,26 +1212,57 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
       selected: isActive,
       child: InkWell(
         onTap: onPressed,
-        borderRadius: BorderRadius.circular(6),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: BorderRadius.circular(8),
+          ),
           child: ExcludeSemantics(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(icon, size: 19, color: color),
-                const SizedBox(height: 1),
-                Text(
-                  label,
-                  style: TextStyle(fontSize: 10, color: color, fontWeight: isActive ? FontWeight.bold : FontWeight.normal),
-                ),
-              ],
+            child: Text(
+              emoji,
+              style: const TextStyle(
+                fontSize: 22,
+                color: Colors.white, // pure white
+                height: 1.0,
+              ),
             ),
           ),
         ),
       ),
     );
   }
+
+  /// Inverse-of-theme decoration for text fields and dropdowns on a dark surface.
+  InputDecoration _inverseInputDecoration(String labelText) {
+    const border = OutlineInputBorder(
+      borderSide: BorderSide(color: Colors.white70),
+    );
+    return InputDecoration(
+      labelText: labelText,
+      labelStyle: const TextStyle(color: Colors.white70, fontSize: 13),
+      floatingLabelStyle: const TextStyle(color: Colors.white),
+      filled: true,
+      fillColor: Colors.white10,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      isDense: true,
+      border: border,
+      enabledBorder: border,
+      focusedBorder: const OutlineInputBorder(
+        borderSide: BorderSide(color: Colors.white, width: 1.5),
+      ),
+    );
+  }
+
+  ButtonStyle get _inverseButtonStyle => ButtonStyle(
+        foregroundColor: WidgetStateProperty.all(Colors.black),
+        backgroundColor: WidgetStateProperty.all(Colors.white),
+        overlayColor: WidgetStateProperty.all(Colors.white24),
+        textStyle: WidgetStateProperty.all(
+          const TextStyle(fontWeight: FontWeight.w600),
+        ),
+      );
 
   Widget _buildPanelContent(int index, String panelName) {
     final member = _team[index];
@@ -1035,31 +1272,56 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Configure Moveset', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+          const Text('Configure Moveset',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
           const SizedBox(height: 6),
           if (moveOptions == null)
             const Center(child: CircularProgressIndicator())
           else
-            ...List.generate(4, (slot) {
+            // 2 columns × 2 rows → at most 2 visual rows of fields
+            ...List.generate(2, (row) {
               return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 3),
-                child: Semantics(
-                  label: 'Move slot ${slot + 1} for ${member.name}',
-                  child: DropdownButtonFormField<String>(
-                    initialValue: member.moves[slot],
-                    isExpanded: true,
-                    decoration: InputDecoration(
-                      labelText: 'Move ${slot + 1}',
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      border: const OutlineInputBorder(),
-                      isDense: true,
-                    ),
-                    items: [
-                      const DropdownMenuItem(value: null, child: Text('None')),
-                      ...moveOptions.map((m) => DropdownMenuItem(value: m, child: Text(m))),
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Row(
+                  children: [
+                    for (int col = 0; col < 2; col++) ...[
+                      if (col > 0) const SizedBox(width: 8),
+                      Expanded(
+                        child: Builder(builder: (_) {
+                          final slot = row * 2 + col;
+                          return Semantics(
+                            label:
+                                'Move slot ${slot + 1} for ${member.name}',
+                            child: DropdownButtonFormField<String>(
+                              initialValue: member.moves[slot],
+                              isExpanded: true,
+                              dropdownColor: Colors.grey[900],
+                              style: const TextStyle(
+                                  color: Colors.white, fontSize: 14),
+                              decoration: _inverseInputDecoration(
+                                  'Move ${slot + 1}'),
+                              items: [
+                                const DropdownMenuItem(
+                                  value: null,
+                                  child: Text('None',
+                                      style:
+                                          TextStyle(color: Colors.white70)),
+                                ),
+                                ...moveOptions.map((m) => DropdownMenuItem(
+                                      value: m,
+                                      child: Text(m,
+                                          style: const TextStyle(
+                                              color: Colors.white)),
+                                    )),
+                              ],
+                              onChanged: (value) =>
+                                  _setMove(index, slot, value),
+                            ),
+                          );
+                        }),
+                      ),
                     ],
-                    onChanged: (value) => _setMove(index, slot, value),
-                  ),
+                  ],
                 ),
               );
             }),
@@ -1069,75 +1331,156 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
 
     if (panelName == 'details') {
       final abilityOptions = _abilitiesCache[index];
+      final itemController = _itemControllers[index];
+      final itemFocus = _itemFocusNodes[index];
 
       List<DropdownMenuItem<String>> genderItems;
+      const whiteStyle = TextStyle(color: Colors.white);
       if (member.genderRate == -1) {
-        genderItems = const [DropdownMenuItem(value: 'Genderless', child: Text('Genderless'))];
+        genderItems = const [
+          DropdownMenuItem(
+              value: 'Genderless',
+              child: Text('Genderless', style: whiteStyle))
+        ];
       } else if (member.genderRate == 0) {
-        genderItems = const [DropdownMenuItem(value: 'Male', child: Text('Male'))];
+        genderItems = const [
+          DropdownMenuItem(
+              value: 'Male', child: Text('Male', style: whiteStyle))
+        ];
       } else if (member.genderRate == 8) {
-        genderItems = const [DropdownMenuItem(value: 'Female', child: Text('Female'))];
+        genderItems = const [
+          DropdownMenuItem(
+              value: 'Female', child: Text('Female', style: whiteStyle))
+        ];
       } else {
         genderItems = const [
-          DropdownMenuItem(value: 'Male', child: Text('Male')),
-          DropdownMenuItem(value: 'Female', child: Text('Female')),
+          DropdownMenuItem(
+              value: 'Male', child: Text('Male', style: whiteStyle)),
+          DropdownMenuItem(
+              value: 'Female', child: Text('Female', style: whiteStyle)),
         ];
       }
 
+      Widget abilityField;
+      if (abilityOptions == null) {
+        abilityField = const Center(child: CircularProgressIndicator());
+      } else {
+        abilityField = Semantics(
+          label:
+              'Ability for ${member.name}, currently ${member.ability ?? "none"}',
+          child: DropdownButtonFormField<String>(
+            initialValue: member.ability,
+            isExpanded: true,
+            dropdownColor: Colors.grey[900],
+            style: const TextStyle(color: Colors.white, fontSize: 14),
+            decoration: _inverseInputDecoration('Ability'),
+            items: abilityOptions.map((a) {
+              final label =
+                  a['isHidden'] ? '${a['name']} (Hidden)' : a['name'];
+              return DropdownMenuItem<String>(
+                value: a['name'] as String,
+                child: Text(label,
+                    style: const TextStyle(color: Colors.white)),
+              );
+            }).toList(),
+            onChanged: (value) {
+              if (value != null) _setAbility(index, value);
+            },
+          ),
+        );
+      }
+
+      final genderField = Semantics(
+        label: 'Gender for ${member.name}, currently ${member.gender}',
+        child: DropdownButtonFormField<String>(
+          initialValue: member.gender,
+          isExpanded: true,
+          dropdownColor: Colors.grey[900],
+          style: const TextStyle(color: Colors.white, fontSize: 14),
+          decoration: _inverseInputDecoration('Gender'),
+          items: genderItems,
+          onChanged: genderItems.length > 1
+              ? (value) {
+                  if (value != null) _setGender(index, value);
+                }
+              : null,
+        ),
+      );
+
+      final natureField = Semantics(
+        label: 'Nature for ${member.name}, currently ${member.nature}',
+        child: DropdownButtonFormField<String>(
+          initialValue: member.nature,
+          isExpanded: true,
+          dropdownColor: Colors.grey[900],
+          style: const TextStyle(color: Colors.white, fontSize: 14),
+          decoration: _inverseInputDecoration('Nature'),
+          items: allNatures.map((n) {
+            final desc = n.boosted == null
+                ? '${n.name} (neutral)'
+                : '${n.name} (+${n.boosted}, -${n.lowered})';
+            return DropdownMenuItem(
+              value: n.name,
+              child:
+                  Text(desc, style: const TextStyle(color: Colors.white)),
+            );
+          }).toList(),
+          onChanged: (value) {
+            if (value != null) _setNature(index, value);
+          },
+        ),
+      );
+
+      final itemField = (itemController == null || itemFocus == null)
+          ? const Center(child: CircularProgressIndicator())
+          : Semantics(
+              label:
+                  'Held item for ${member.name}, currently ${member.heldItem ?? "none"}',
+              textField: true,
+              child: TextField(
+                controller: itemController,
+                focusNode: itemFocus,
+                style: const TextStyle(color: Colors.white),
+                cursorColor: Colors.white,
+                decoration: _inverseInputDecoration('Held Item').copyWith(
+                  hintText: 'e.g. life orb, leftovers',
+                  hintStyle: const TextStyle(color: Colors.white38),
+                ),
+                onEditingComplete: () {
+                  _commitHeldItem(index);
+                  itemFocus.unfocus();
+                },
+                onSubmitted: (_) => _commitHeldItem(index),
+              ),
+            );
+
+      // 2 columns × 2 rows: Item | Gender / Ability | Nature
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Gender, Ability & Nature', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+          const Text('Held Item, Gender, Ability & Nature',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
           const SizedBox(height: 6),
-          Semantics(
-            label: 'Gender for ${member.name}, currently ${member.gender}',
-            child: DropdownButtonFormField<String>(
-              initialValue: member.gender,
-              isExpanded: true,
-              decoration: const InputDecoration(labelText: 'Gender', border: OutlineInputBorder(), isDense: true),
-              items: genderItems,
-              onChanged: genderItems.length > 1
-                  ? (value) {
-                      if (value != null) _setGender(index, value);
-                    }
-                  : null,
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(child: itemField),
+                const SizedBox(width: 8),
+                Expanded(child: genderField),
+              ],
             ),
           ),
-          const SizedBox(height: 10),
-          if (abilityOptions == null)
-            const Center(child: CircularProgressIndicator())
-          else
-            Semantics(
-              label: 'Ability for ${member.name}, currently ${member.ability ?? "none"}',
-              child: DropdownButtonFormField<String>(
-                initialValue: member.ability,
-                isExpanded: true,
-                decoration: const InputDecoration(labelText: 'Ability', border: OutlineInputBorder(), isDense: true),
-                items: abilityOptions.map((a) {
-                  final label = a['isHidden'] ? '${a['name']} (Hidden)' : a['name'];
-                  return DropdownMenuItem<String>(value: a['name'] as String, child: Text(label));
-                }).toList(),
-                onChanged: (value) {
-                  if (value != null) _setAbility(index, value);
-                },
-              ),
-            ),
-          const SizedBox(height: 10),
-          Semantics(
-            label: 'Nature for ${member.name}, currently ${member.nature}',
-            child: DropdownButtonFormField<String>(
-              initialValue: member.nature,
-              isExpanded: true,
-              decoration: const InputDecoration(labelText: 'Nature', border: OutlineInputBorder(), isDense: true),
-              items: allNatures.map((n) {
-                final desc = n.boosted == null
-                    ? '${n.name} (neutral)'
-                    : '${n.name} (+${n.boosted}, -${n.lowered})';
-                return DropdownMenuItem(value: n.name, child: Text(desc));
-              }).toList(),
-              onChanged: (value) {
-                if (value != null) _setNature(index, value);
-              },
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(child: abilityField),
+                const SizedBox(width: 8),
+                Expanded(child: natureField),
+              ],
             ),
           ),
         ],
@@ -1145,47 +1488,81 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
     }
 
     if (panelName == 'evs') {
+      // Controllers are created when the panel is opened (_togglePanel).
+      final controllers = _evControllers[index];
+      final focusNodes = _evFocusNodes[index];
+      if (controllers == null || focusNodes == null) {
+        return const Center(child: CircularProgressIndicator());
+      }
+
+      final stats = member.evs.keys.toList(); // HP Atk Def SpA SpD Spe
+
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Effort Values (EVs)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              const Text('Effort Values (EVs)',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
               Semantics(
                 liveRegion: true,
                 child: Text(
                   '${member.evTotal}/510 total',
                   style: TextStyle(
                     fontSize: 13,
-                    color: member.evTotal > 510 ? Colors.red : Theme.of(context).colorScheme.onSurfaceVariant,
+                    color: member.evTotal > 510
+                        ? Colors.red
+                        : Colors.white70,
                   ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 6),
-          ...member.evs.keys.map((stat) {
+          // 2 columns × 3 rows → at most 3 visual rows of fields
+          ...List.generate(3, (row) {
             return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 3),
-              child: Semantics(
-                label: '$stat effort values, currently ${member.evs[stat]} out of 252',
-                textField: true,
-                child: TextFormField(
-                  key: ValueKey('${member.name}-$stat-${member.evs[stat]}'),
-                  initialValue: member.evs[stat].toString(),
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    labelText: '$stat EVs (0-252)',
-                    border: const OutlineInputBorder(),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    isDense: true,
-                  ),
-                  onChanged: (value) {
-                    final parsed = int.tryParse(value) ?? 0;
-                    _setEv(index, stat, parsed);
-                  },
-                ),
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Row(
+                children: [
+                  for (int col = 0; col < 2; col++) ...[
+                    if (col > 0) const SizedBox(width: 8),
+                    Expanded(
+                      child: Builder(builder: (_) {
+                        final statIndex = row * 2 + col;
+                        if (statIndex >= stats.length) {
+                          return const SizedBox.shrink();
+                        }
+                        final stat = stats[statIndex];
+                        return Semantics(
+                          label:
+                              '$stat effort values, currently ${member.evs[stat]} out of 252',
+                          textField: true,
+                          child: TextField(
+                            controller: controllers[stat],
+                            focusNode: focusNodes[stat],
+                            keyboardType: TextInputType.number,
+                            style: const TextStyle(color: Colors.white),
+                            cursorColor: Colors.white,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                            ],
+                            decoration: _inverseInputDecoration(
+                                '$stat EVs (0-252)'),
+                            onEditingComplete: () {
+                              _commitEv(index, stat);
+                              focusNodes[stat]?.unfocus();
+                            },
+                            onSubmitted: (_) {
+                              _commitEv(index, stat);
+                            },
+                          ),
+                        );
+                      }),
+                    ),
+                  ],
+                ],
               ),
             );
           }),
@@ -1196,92 +1573,4 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
     return const SizedBox.shrink();
   }
 
-  void _showItemDialog(int index) async {
-    _unfocus();
-    List<String> validItems;
-    try {
-      validItems = await _service.getHeldItemNames();
-    } catch (e) {
-      _announce('Could not load valid held items. Check your connection.');
-      return;
-    }
-
-    if (!mounted) return;
-
-    final controller = TextEditingController(text: _team[index].heldItem ?? '');
-    String? errorText;
-
-    await showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) {
-          return AlertDialog(
-            title: Text('Held Item for ${_team[index].name}'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Semantics(
-                  label: 'Enter held item name',
-                  textField: true,
-                  child: TextField(
-                    controller: controller,
-                    decoration: InputDecoration(
-                      labelText: 'Held item name',
-                      errorText: errorText,
-                      border: const OutlineInputBorder(),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Leave blank for no item. Must match an official held item name (e.g. choice band, charizardite x).',
-                  style: TextStyle(fontSize: 12),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () async {
-                  final rawEntered = controller.text.trim().toLowerCase();
-                  if (rawEntered.isEmpty) {
-                    await _setHeldItem(index, '');
-                    if (context.mounted) Navigator.pop(context);
-                    return;
-                  }
-
-                  // Normalize spaces and hyphens for flexible user input
-                  final normalizedSlug = rawEntered.replaceAll(' ', '-');
-                  final normalizedSpace = rawEntered.replaceAll('-', ' ');
-
-                  final isMatch = validItems.any((item) {
-                    final cleanItem = item.toLowerCase();
-                    return cleanItem == rawEntered ||
-                        cleanItem == normalizedSlug ||
-                        cleanItem == normalizedSpace;
-                  });
-
-                  if (isMatch) {
-                    await _setHeldItem(index, rawEntered);
-                    if (context.mounted) Navigator.pop(context);
-                  } else {
-                    setDialogState(() {
-                      errorText = 'Not a recognized held item name.';
-                    });
-                  }
-                },
-                child: const Text('Save'),
-              ),
-            ],
-          );
-        },
-      ),
-    );
-
-    _unfocus();
-  }
 }
