@@ -104,16 +104,14 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
 
   Future<void> _loadData() async {
     try {
-      final rulesJson = await rootBundle.loadString('lib/data/mb_rules.json');
-      final rules = json.decode(rulesJson);
-      _excludedPokemon = List<String>.from(rules['excluded_pokemon']);
-
-      final species = await _service.getAllSpeciesNames();
+      final rosterJson = await rootBundle.loadString('lib/data/champions_roster.json');
+      final roster = json.decode(rosterJson);
+      final List<String> allowed = List<String>.from(roster['allowed_pokemon']);
 
       await _loadSavedTeam();
 
       setState(() {
-        _allSpecies = species.where((s) => !_excludedPokemon.contains(s)).toList();
+        _allSpecies = allowed;
         _filtered = [];
         _loading = false;
         // Start all cards collapsed for max space efficiency
@@ -123,7 +121,7 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
       });
     } catch (e) {
       setState(() {
-        _statusMessage = 'Error loading Pokémon data. Check your connection.';
+        _statusMessage = 'Error loading Pokémon roster.';
         _loading = false;
       });
     }
@@ -324,14 +322,24 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
   }
 
   Future<void> _setHeldItem(int index, String item) async {
-    final duplicate = _team.any((m) => m.heldItem == item && m != _team[index]);
-    if (duplicate && item.isNotEmpty) {
-      _announce('Another Pokémon on your team already holds $item.');
-      return;
+    final cleanItem = item.trim().toLowerCase();
+
+    if (cleanItem.isNotEmpty) {
+      // Check if another member on the team is already holding this item
+      final duplicateMember = _team.firstWhere(
+        (m) => m.heldItem?.trim().toLowerCase() == cleanItem && _team.indexOf(m) != index,
+        orElse: () => TeamMember(name: '', pokedexNumber: -1),
+      );
+
+      if (duplicateMember.pokedexNumber != -1) {
+        _announce('Item Clause Violation: ${duplicateMember.name.toUpperCase()} is already holding $cleanItem.');
+        return;
+      }
     }
-    setState(() => _team[index].heldItem = item.isEmpty ? null : item);
+
+    setState(() => _team[index].heldItem = cleanItem.isEmpty ? null : cleanItem);
     await _saveTeam();
-    _announce('${_team[index].name} is now holding ${item.isEmpty ? "no item" : item}.');
+    _announce('${_team[index].name} is now holding ${cleanItem.isEmpty ? "no item" : cleanItem}.');
   }
 
   void _togglePanel(int index, String panelName) async {
@@ -394,6 +402,9 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
   bool _isValidMegaItem(String heldItem, String formKey) {
     if (heldItem.isEmpty) return false;
     final item = heldItem.toLowerCase().trim();
+
+    // Guard against non-Mega item ending in 'ite'
+    if (item == 'eviolite') return false;
 
     if (formKey.contains('-mega-x')) {
       return item.endsWith('x') && item.contains('ite');
@@ -1205,7 +1216,7 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
                     contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     isDense: true,
                   ),
-                  onFieldSubmitted: (value) {
+                  onChanged: (value) {
                     final parsed = int.tryParse(value) ?? 0;
                     _setEv(index, stat, parsed);
                   },
@@ -1271,14 +1282,26 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
               ),
               TextButton(
                 onPressed: () async {
-                  final entered = controller.text.trim().toLowerCase();
-                  if (entered.isEmpty) {
+                  final rawEntered = controller.text.trim().toLowerCase();
+                  if (rawEntered.isEmpty) {
                     await _setHeldItem(index, '');
                     if (context.mounted) Navigator.pop(context);
                     return;
                   }
-                  if (validItems.contains(entered)) {
-                    await _setHeldItem(index, entered);
+
+                  // Normalize spaces and hyphens for flexible user input
+                  final normalizedSlug = rawEntered.replaceAll(' ', '-');
+                  final normalizedSpace = rawEntered.replaceAll('-', ' ');
+
+                  final isMatch = validItems.any((item) {
+                    final cleanItem = item.toLowerCase();
+                    return cleanItem == rawEntered ||
+                        cleanItem == normalizedSlug ||
+                        cleanItem == normalizedSpace;
+                  });
+
+                  if (isMatch) {
+                    await _setHeldItem(index, rawEntered);
                     if (context.mounted) Navigator.pop(context);
                   } else {
                     setDialogState(() {
