@@ -162,52 +162,16 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
     }
 
     try {
-      final varieties = await _service.getVarieties(name);
-
-      final selectableVarieties = varieties.where((v) {
-        final String vName = v['pokemon']['name'] as String;
-        return !vName.contains('-mega') && !vName.contains('-gmax');
-      }).map((v) => v['pokemon']['name'] as String).toList();
-
-      String selectedFormName = name;
-
-      if (selectableVarieties.length > 1 && mounted) {
-        final chosen = await showDialog<String>(
-          context: context,
-          builder: (context) => SimpleDialog(
-            title: Text('Select Form for ${name.toUpperCase()}'),
-            children: selectableVarieties.map((formName) {
-              final displayName = formName
-                  .split('-')
-                  .map((word) => word.isNotEmpty
-                      ? '${word[0].toUpperCase()}${word.substring(1)}'
-                      : '')
-                  .join(' ');
-
-              return SimpleDialogOption(
-                onPressed: () => Navigator.pop(context, formName),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8.0),
-                  child: Semantics(
-                    button: true,
-                    label: 'Select form $displayName',
-                    child: Text(displayName, style: const TextStyle(fontSize: 16)),
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
-        );
-
-        if (chosen == null) return;
-        selectedFormName = chosen;
-      }
+      // The roster already contains the exact form name (e.g. "raichu-alola").
+      // Use it directly — no need to query varieties.
+      final String selectedFormName = name;
 
       final data = await _service.getPokemon(selectedFormName);
       final pokedexNumber = data['id'] as int;
 
       if (_team.any((m) => m.pokedexNumber == pokedexNumber)) {
-        _announce('$selectedFormName shares a Pokédex number with a Pokémon already on your team.');
+        _announce(
+            '$selectedFormName shares a Pokédex number with a Pokémon already on your team.');
         return;
       }
 
@@ -215,7 +179,8 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
       String? defaultAbility;
 
       try {
-        final abilities = await _service.getAbilitiesForPokemon(selectedFormName);
+        final abilities =
+            await _service.getAbilitiesForPokemon(selectedFormName);
         if (abilities.isNotEmpty) {
           defaultAbility = abilities.first['name'] as String;
         }
