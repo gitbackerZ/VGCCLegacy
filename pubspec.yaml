@@ -15,4 +15,4 @@ dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - lib/data/mb_rules.json
+    - lib/data/
