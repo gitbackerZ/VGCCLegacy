@@ -394,10 +394,12 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
         content: Text('Remove $name from your team? This cannot be undone.'),
         actions: [
           TextButton(
+            style: _inverseTextButtonStyle,
             onPressed: () => Navigator.pop(context, false),
             child: const Text('Cancel'),
           ),
-          TextButton(
+          FilledButton(
+            style: _inverseFilledButtonStyle,
             onPressed: () => Navigator.pop(context, true),
             child: Text('Remove $name'),
           ),
@@ -525,6 +527,12 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
       }
       if (panelName == 'details') {
         _ensureItemController(index);
+        // Prefetch held-item pool for autocomplete suggestions
+        if (_cachedValidItems == null) {
+          try {
+            _cachedValidItems = await _service.getHeldItemNames();
+          } catch (_) {}
+        }
       }
       if (!_movesCache.containsKey(index)) {
         try {
@@ -674,7 +682,8 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
             ),
           ),
           actions: [
-            TextButton(
+            FilledButton(
+              style: _inverseFilledButtonStyle,
               onPressed: () => Navigator.pop(context),
               child: const Text('Close'),
             ),
@@ -794,7 +803,8 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
           ),
         ),
         actions: [
-          TextButton(
+          FilledButton(
+            style: _inverseFilledButtonStyle,
             onPressed: () async {
               await Clipboard.setData(ClipboardData(text: text));
               if (context.mounted) {
@@ -806,6 +816,7 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
             child: const Text('Copy'),
           ),
           TextButton(
+            style: _inverseTextButtonStyle,
             onPressed: () => Navigator.pop(context),
             child: const Text('Close'),
           ),
@@ -828,18 +839,28 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
           child: TextField(
             controller: controller,
             maxLines: 10,
-            decoration: const InputDecoration(
+            style: TextStyle(
+                color: Theme.of(context).colorScheme.onInverseSurface),
+            cursorColor: Theme.of(context).colorScheme.inversePrimary,
+            decoration: _adaptiveInputDecoration('').copyWith(
               hintText: 'Paste exported team text here',
-              border: OutlineInputBorder(),
+              hintStyle: TextStyle(
+                color: Theme.of(context)
+                    .colorScheme
+                    .onInverseSurface
+                    .withValues(alpha: 0.5),
+              ),
             ),
           ),
         ),
         actions: [
           TextButton(
+            style: _inverseTextButtonStyle,
             onPressed: () => Navigator.pop(context),
             child: const Text('Cancel'),
           ),
-          TextButton(
+          FilledButton(
+            style: _inverseFilledButtonStyle,
             onPressed: () => Navigator.pop(context, controller.text),
             child: const Text('Parse'),
           ),
@@ -869,14 +890,17 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
         content: Text('Found ${parsed.length} Pokémon in the pasted text. How should this be applied?'),
         actions: [
           TextButton(
+            style: _inverseTextButtonStyle,
             onPressed: () => Navigator.pop(context, 'cancel'),
             child: const Text('Cancel'),
           ),
-          TextButton(
+          FilledButton(
+            style: _inverseFilledButtonStyle,
             onPressed: () => Navigator.pop(context, 'add'),
             child: const Text('Add to Team'),
           ),
-          TextButton(
+          FilledButton(
+            style: _inverseFilledButtonStyle,
             onPressed: () => Navigator.pop(context, 'replace'),
             child: const Text('Replace Team'),
           ),
@@ -973,11 +997,17 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
                   controller: _searchController,
                   focusNode: _searchFocusNode,
                   autofocus: false,
-                  style: const TextStyle(color: Colors.white),
-                  cursorColor: Colors.white,
-                  decoration: _inverseInputDecoration('Search Pokémon').copyWith(
-                    prefixIcon:
-                        const Icon(Icons.search, color: Colors.white70),
+                  style: TextStyle(
+                      color: Theme.of(context).colorScheme.onInverseSurface),
+                  cursorColor: Theme.of(context).colorScheme.inversePrimary,
+                  decoration: _adaptiveInputDecoration('Search Pokémon').copyWith(
+                    prefixIcon: Icon(
+                      Icons.search,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onInverseSurface
+                          .withValues(alpha: 0.75),
+                    ),
                   ),
                   onChanged: _filter,
                 ),
@@ -1135,20 +1165,12 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
             ),
             Divider(height: 1, color: theme.dividerColor),
             Container(
-              color: Colors.black,
+              color: theme.colorScheme.surfaceContainerHighest,
               padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  _buildToolbarToggle(
-                    emoji: '⚔️',
-                    label: 'Moves',
-                    isActive: activePanel == 'moves',
-                    semanticLabel: activePanel == 'moves'
-                        ? 'Collapse moveset editor for ${member.name}'
-                        : 'Expand moveset editor for ${member.name}',
-                    onPressed: () => _togglePanel(index, 'moves'),
-                  ),
+                  // Details first, then Moves (interchanged)
                   _buildToolbarToggle(
                     emoji: '⚙️',
                     label: 'Details',
@@ -1159,7 +1181,16 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
                     onPressed: () => _togglePanel(index, 'details'),
                   ),
                   _buildToolbarToggle(
-                    emoji: '📊',
+                    emoji: '⚔️',
+                    label: 'Moves',
+                    isActive: activePanel == 'moves',
+                    semanticLabel: activePanel == 'moves'
+                        ? 'Collapse moveset editor for ${member.name}'
+                        : 'Expand moveset editor for ${member.name}',
+                    onPressed: () => _togglePanel(index, 'moves'),
+                  ),
+                  _buildToolbarToggle(
+                    emoji: '📈',
                     label: 'EVs',
                     isActive: activePanel == 'evs',
                     semanticLabel: activePanel == 'evs'
@@ -1168,7 +1199,7 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
                     onPressed: () => _togglePanel(index, 'evs'),
                   ),
                   _buildToolbarToggle(
-                    emoji: '📈',
+                    emoji: '📊',
                     label: 'Stats',
                     isActive: false,
                     semanticLabel: 'Show calculated stats for ${member.name}',
@@ -1180,11 +1211,11 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
             if (activePanel != null) ...[
               Divider(height: 1, color: theme.dividerColor),
               Container(
-                color: Colors.black87,
+                color: theme.colorScheme.surfaceContainerHigh,
                 width: double.infinity,
                 padding: const EdgeInsets.all(10.0),
                 child: DefaultTextStyle(
-                  style: const TextStyle(color: Colors.white),
+                  style: TextStyle(color: theme.colorScheme.onSurface),
                   child: _buildPanelContent(index, activePanel),
                 ),
               ),
@@ -1203,8 +1234,11 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
     required VoidCallback onPressed,
     String? semanticLabel,
   }) {
-    // Pure white emoji on dark background; slight highlight when active.
-    final Color bg = isActive ? Colors.white24 : Colors.transparent;
+    final cs = Theme.of(context).colorScheme;
+    // Adaptive highlight; emoji follows onSurface so it stays readable in light & dark.
+    final Color bg =
+        isActive ? cs.primary.withValues(alpha: 0.25) : Colors.transparent;
+    final Color emojiColor = isActive ? cs.primary : cs.onSurface;
 
     return Semantics(
       button: true,
@@ -1222,9 +1256,9 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
           child: ExcludeSemantics(
             child: Text(
               emoji,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 22,
-                color: Colors.white, // pure white
+                color: emojiColor,
                 height: 1.0,
               ),
             ),
@@ -1234,35 +1268,59 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
     );
   }
 
-  /// Inverse-of-theme decoration for text fields and dropdowns on a dark surface.
-  InputDecoration _inverseInputDecoration(String labelText) {
-    const border = OutlineInputBorder(
-      borderSide: BorderSide(color: Colors.white70),
+  /// High-contrast inverse decoration for low-vision users.
+  /// Fields use inverseSurface so they "pop" against the adaptive chrome.
+  InputDecoration _adaptiveInputDecoration(String labelText) {
+    final cs = Theme.of(context).colorScheme;
+    final border = OutlineInputBorder(
+      borderSide: BorderSide(color: cs.onInverseSurface.withValues(alpha: 0.55)),
     );
     return InputDecoration(
       labelText: labelText,
-      labelStyle: const TextStyle(color: Colors.white70, fontSize: 13),
-      floatingLabelStyle: const TextStyle(color: Colors.white),
+      labelStyle: TextStyle(
+        color: cs.onInverseSurface.withValues(alpha: 0.75),
+        fontSize: 13,
+      ),
+      floatingLabelStyle: TextStyle(color: cs.inversePrimary),
       filled: true,
-      fillColor: Colors.white10,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      fillColor: cs.inverseSurface,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       isDense: true,
       border: border,
       enabledBorder: border,
-      focusedBorder: const OutlineInputBorder(
-        borderSide: BorderSide(color: Colors.white, width: 1.5),
+      focusedBorder: OutlineInputBorder(
+        borderSide: BorderSide(color: cs.inversePrimary, width: 2),
       ),
+      errorStyle: TextStyle(color: cs.error),
     );
   }
 
-  ButtonStyle get _inverseButtonStyle => ButtonStyle(
-        foregroundColor: WidgetStateProperty.all(Colors.black),
-        backgroundColor: WidgetStateProperty.all(Colors.white),
-        overlayColor: WidgetStateProperty.all(Colors.white24),
-        textStyle: WidgetStateProperty.all(
-          const TextStyle(fontWeight: FontWeight.w600),
-        ),
-      );
+  /// Dropdown menu panel matches inverse fields.
+  Color get _dropdownMenuColor =>
+      Theme.of(context).colorScheme.inverseSurface;
+
+  /// Text inside inverse fields / dropdowns.
+  Color get _fieldTextColor =>
+      Theme.of(context).colorScheme.onInverseSurface;
+
+  /// Primary action buttons (Save, confirm, etc.) — inverse filled.
+  ButtonStyle get _inverseFilledButtonStyle {
+    final cs = Theme.of(context).colorScheme;
+    return FilledButton.styleFrom(
+      backgroundColor: cs.inversePrimary,
+      foregroundColor: cs.onInverseSurface,
+      disabledBackgroundColor: cs.inverseSurface.withValues(alpha: 0.4),
+      disabledForegroundColor: cs.onInverseSurface.withValues(alpha: 0.4),
+    );
+  }
+
+  /// Secondary/cancel text buttons on inverse-friendly contrast.
+  ButtonStyle get _inverseTextButtonStyle {
+    final cs = Theme.of(context).colorScheme;
+    return TextButton.styleFrom(
+      foregroundColor: cs.inversePrimary,
+    );
+  }
 
   Widget _buildPanelContent(int index, String panelName) {
     final member = _team[index];
@@ -1295,23 +1353,28 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
                             child: DropdownButtonFormField<String>(
                               initialValue: member.moves[slot],
                               isExpanded: true,
-                              dropdownColor: Colors.grey[900],
-                              style: const TextStyle(
-                                  color: Colors.white, fontSize: 14),
-                              decoration: _inverseInputDecoration(
+                              dropdownColor: _dropdownMenuColor,
+                              style: TextStyle(
+                                  color: _fieldTextColor, fontSize: 14),
+                              decoration: _adaptiveInputDecoration(
                                   'Move ${slot + 1}'),
                               items: [
-                                const DropdownMenuItem(
+                                DropdownMenuItem(
                                   value: null,
                                   child: Text('None',
-                                      style:
-                                          TextStyle(color: Colors.white70)),
+                                      style: TextStyle(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onInverseSurface
+                                              .withValues(alpha: 0.75))),
                                 ),
                                 ...moveOptions.map((m) => DropdownMenuItem(
                                       value: m,
                                       child: Text(m,
-                                          style: const TextStyle(
-                                              color: Colors.white)),
+                                          style: TextStyle(
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .onInverseSurface)),
                                     )),
                               ],
                               onChanged: (value) =>
@@ -1335,29 +1398,29 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
       final itemFocus = _itemFocusNodes[index];
 
       List<DropdownMenuItem<String>> genderItems;
-      const whiteStyle = TextStyle(color: Colors.white);
+      final itemStyle = TextStyle(color: Theme.of(context).colorScheme.onInverseSurface);
       if (member.genderRate == -1) {
-        genderItems = const [
+        genderItems = [
           DropdownMenuItem(
               value: 'Genderless',
-              child: Text('Genderless', style: whiteStyle))
+              child: Text('Genderless', style: itemStyle))
         ];
       } else if (member.genderRate == 0) {
-        genderItems = const [
+        genderItems = [
           DropdownMenuItem(
-              value: 'Male', child: Text('Male', style: whiteStyle))
+              value: 'Male', child: Text('Male', style: itemStyle))
         ];
       } else if (member.genderRate == 8) {
-        genderItems = const [
+        genderItems = [
           DropdownMenuItem(
-              value: 'Female', child: Text('Female', style: whiteStyle))
+              value: 'Female', child: Text('Female', style: itemStyle))
         ];
       } else {
-        genderItems = const [
+        genderItems = [
           DropdownMenuItem(
-              value: 'Male', child: Text('Male', style: whiteStyle)),
+              value: 'Male', child: Text('Male', style: itemStyle)),
           DropdownMenuItem(
-              value: 'Female', child: Text('Female', style: whiteStyle)),
+              value: 'Female', child: Text('Female', style: itemStyle)),
         ];
       }
 
@@ -1371,16 +1434,16 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
           child: DropdownButtonFormField<String>(
             initialValue: member.ability,
             isExpanded: true,
-            dropdownColor: Colors.grey[900],
-            style: const TextStyle(color: Colors.white, fontSize: 14),
-            decoration: _inverseInputDecoration('Ability'),
+            dropdownColor: _dropdownMenuColor,
+            style: TextStyle(color: _fieldTextColor, fontSize: 14),
+            decoration: _adaptiveInputDecoration('Ability'),
             items: abilityOptions.map((a) {
               final label =
                   a['isHidden'] ? '${a['name']} (Hidden)' : a['name'];
               return DropdownMenuItem<String>(
                 value: a['name'] as String,
                 child: Text(label,
-                    style: const TextStyle(color: Colors.white)),
+                    style: TextStyle(color: Theme.of(context).colorScheme.onInverseSurface)),
               );
             }).toList(),
             onChanged: (value) {
@@ -1395,9 +1458,9 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
         child: DropdownButtonFormField<String>(
           initialValue: member.gender,
           isExpanded: true,
-          dropdownColor: Colors.grey[900],
-          style: const TextStyle(color: Colors.white, fontSize: 14),
-          decoration: _inverseInputDecoration('Gender'),
+          dropdownColor: _dropdownMenuColor,
+          style: TextStyle(color: _fieldTextColor, fontSize: 14),
+          decoration: _adaptiveInputDecoration('Gender'),
           items: genderItems,
           onChanged: genderItems.length > 1
               ? (value) {
@@ -1412,9 +1475,9 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
         child: DropdownButtonFormField<String>(
           initialValue: member.nature,
           isExpanded: true,
-          dropdownColor: Colors.grey[900],
-          style: const TextStyle(color: Colors.white, fontSize: 14),
-          decoration: _inverseInputDecoration('Nature'),
+          dropdownColor: _dropdownMenuColor,
+          style: TextStyle(color: _fieldTextColor, fontSize: 14),
+          decoration: _adaptiveInputDecoration('Nature'),
           items: allNatures.map((n) {
             final desc = n.boosted == null
                 ? '${n.name} (neutral)'
@@ -1422,7 +1485,7 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
             return DropdownMenuItem(
               value: n.name,
               child:
-                  Text(desc, style: const TextStyle(color: Colors.white)),
+                  Text(desc, style: TextStyle(color: Theme.of(context).colorScheme.onInverseSurface)),
             );
           }).toList(),
           onChanged: (value) {
@@ -1437,20 +1500,91 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
               label:
                   'Held item for ${member.name}, currently ${member.heldItem ?? "none"}',
               textField: true,
-              child: TextField(
-                controller: itemController,
+              child: RawAutocomplete<String>(
+                textEditingController: itemController,
                 focusNode: itemFocus,
-                style: const TextStyle(color: Colors.white),
-                cursorColor: Colors.white,
-                decoration: _inverseInputDecoration('Held Item').copyWith(
-                  hintText: 'e.g. life orb, leftovers',
-                  hintStyle: const TextStyle(color: Colors.white38),
-                ),
-                onEditingComplete: () {
-                  _commitHeldItem(index);
-                  itemFocus.unfocus();
+                optionsBuilder: (TextEditingValue value) {
+                  final query = value.text.trim().toLowerCase();
+                  final pool = _cachedValidItems ?? const <String>[];
+                  if (query.isEmpty) {
+                    // Show a short default list so the user discovers items
+                    return pool.take(12);
+                  }
+                  return pool
+                      .where((item) => item.toLowerCase().contains(query))
+                      .take(20);
                 },
-                onSubmitted: (_) => _commitHeldItem(index),
+                onSelected: (String selection) {
+                  itemController.text = selection;
+                  _commitHeldItem(index);
+                },
+                fieldViewBuilder: (
+                  context,
+                  textController,
+                  focusNode,
+                  onFieldSubmitted,
+                ) {
+                  return TextField(
+                    controller: textController,
+                    focusNode: focusNode,
+                    style: TextStyle(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onInverseSurface),
+                    cursorColor:
+                        Theme.of(context).colorScheme.inversePrimary,
+                    decoration:
+                        _adaptiveInputDecoration('Held Item').copyWith(
+                      hintText: 'e.g. life orb, leftovers',
+                      hintStyle: TextStyle(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onInverseSurface
+                            .withValues(alpha: 0.5),
+                      ),
+                    ),
+                    onEditingComplete: () {
+                      _commitHeldItem(index);
+                      focusNode.unfocus();
+                    },
+                    onSubmitted: (_) {
+                      _commitHeldItem(index);
+                      onFieldSubmitted();
+                    },
+                  );
+                },
+                optionsViewBuilder: (context, onSelected, options) {
+                  final cs = Theme.of(context).colorScheme;
+                  return Align(
+                    alignment: Alignment.topLeft,
+                    child: Material(
+                      elevation: 4,
+                      color: cs.inverseSurface,
+                      borderRadius: BorderRadius.circular(8),
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(
+                            maxHeight: 200, maxWidth: 280),
+                        child: ListView.builder(
+                          padding: EdgeInsets.zero,
+                          shrinkWrap: true,
+                          itemCount: options.length,
+                          itemBuilder: (context, i) {
+                            final option = options.elementAt(i);
+                            return ListTile(
+                              dense: true,
+                              title: Text(
+                                option,
+                                style:
+                                    TextStyle(color: cs.onInverseSurface),
+                              ),
+                              onTap: () => onSelected(option),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  );
+                },
               ),
             );
 
@@ -1513,7 +1647,7 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
                     fontSize: 13,
                     color: member.evTotal > 510
                         ? Colors.red
-                        : Colors.white70,
+                        : Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
               ),
@@ -1543,12 +1677,17 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
                             controller: controllers[stat],
                             focusNode: focusNodes[stat],
                             keyboardType: TextInputType.number,
-                            style: const TextStyle(color: Colors.white),
-                            cursorColor: Colors.white,
+                            style: TextStyle(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onInverseSurface),
+                            cursorColor: Theme.of(context)
+                                .colorScheme
+                                .inversePrimary,
                             inputFormatters: [
                               FilteringTextInputFormatter.digitsOnly,
                             ],
-                            decoration: _inverseInputDecoration(
+                            decoration: _adaptiveInputDecoration(
                                 '$stat EVs (0-252)'),
                             onEditingComplete: () {
                               _commitEv(index, stat);
