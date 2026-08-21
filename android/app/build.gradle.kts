@@ -26,10 +26,17 @@ android {
     }
 
     buildTypes {
-        release {
+        getByName("debug") {
+            // Appends .debug to package name so it installs side-by-side
+            applicationIdSuffix = ".debug"
+            manifestPlaceholders["appName"] = "Pokémon Companion (Debug)"
+        }
+
+        getByName("release") {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
+            manifestPlaceholders["appName"] = "Pokémon Companion"
         }
     }
 }
