@@ -75,7 +75,6 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
   List<String> _excludedPokemon = [];
   List<String> _filtered = [];
   List<TeamMember> _team = [];
-
   final Map<int, List<String>> _movesCache = {};
   final Map<int, List<Map<String, dynamic>>> _abilitiesCache = {};
 
@@ -204,12 +203,8 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
   void _ensureItemController(int index) {
     if (_itemControllers.containsKey(index)) {
       final current = _team[index].heldItem ?? '';
-      // Only sync from model when the field is not focused (avoid fighting typing).
-      final focus = _itemFocusNodes[index];
-      if (focus != null && !focus.hasFocus) {
-        if (_itemControllers[index]!.text != current) {
-          _itemControllers[index]!.text = current;
-        }
+      if (_itemControllers[index]!.text != current) {
+        _itemControllers[index]!.text = current;
       }
       return;
     }
@@ -228,32 +223,33 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
   Future<void> _commitHeldItem(int index) async {
     final controller = _itemControllers[index];
     if (controller == null) return;
-    final raw = controller.text.trim();
+    final raw = controller.text.trim().toLowerCase();
 
-    // Explicit clear → no item
     if (raw.isEmpty) {
-      if (_team[index].heldItem != null) {
-        await _setHeldItem(index, '');
-      }
+      await _setHeldItem(index, '');
       return;
     }
 
     try {
       _cachedValidItems ??= await _service.getHeldItemNames();
-      final canonical = _resolveHeldItemName(raw);
-      if (canonical != null) {
-        // Skip no-op re-announce if unchanged
-        if (_team[index].heldItem != canonical) {
-          await _setHeldItem(index, canonical);
-        }
-        controller.text = canonical;
+      final normalizedSlug = raw.replaceAll(' ', '-');
+      final normalizedSpace = raw.replaceAll('-', ' ');
+      final isMatch = _cachedValidItems!.any((item) {
+        final clean = item.toLowerCase();
+        return clean == raw ||
+            clean == normalizedSlug ||
+            clean == normalizedSpace;
+      });
+      if (isMatch) {
+        await _setHeldItem(index, raw);
+        // Reflect whatever was accepted (may be unchanged on clause violation)
+        controller.text = _team[index].heldItem ?? '';
       } else {
-        // Invalid input: restore previous value — do NOT clear the item
-        _announce('Not a recognized Champions held item.');
+        _announce('Not a recognized held item name.');
         controller.text = _team[index].heldItem ?? '';
       }
     } catch (_) {
-      _announce('Could not validate held item.');
+      _announce('Could not validate held item. Check your connection.');
       controller.text = _team[index].heldItem ?? '';
     }
   }
@@ -265,25 +261,17 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
 
   Future<void> _loadData() async {
     try {
-      final rosterJson =
-          await rootBundle.loadString('lib/data/champions_roster.json');
+      final rosterJson = await rootBundle.loadString('lib/data/champions_roster.json');
       final roster = json.decode(rosterJson);
-      final List<String> allowed =
-          List<String>.from(roster['allowed_pokemon']);
+      final List<String> allowed = List<String>.from(roster['allowed_pokemon']);
 
-      // Load saved team + items in parallel (items are local JSON — fast).
-      final itemsFuture = _service.getHeldItemNames();
       await _loadSavedTeam();
-      try {
-        _cachedValidItems = await itemsFuture;
-      } catch (_) {
-        _cachedValidItems = [];
-      }
 
       setState(() {
         _allSpecies = allowed;
         _filtered = [];
         _loading = false;
+        // Start all cards collapsed for max space efficiency
         for (int i = 0; i < _team.length; i++) {
           _collapsedCards.add(i);
         }
@@ -312,34 +300,15 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
   }
 
   void _filter(String query) {
-    final q = query.trim().toLowerCase();
     setState(() {
-      if (q.isEmpty) {
+      if (query.trim().isEmpty) {
         _filtered = [];
       } else {
-        _filtered =
-            _allSpecies.where((p) => p.toLowerCase().contains(q)).toList();
+        _filtered = _allSpecies
+            .where((p) => p.toLowerCase().contains(query.toLowerCase()))
+            .toList();
       }
     });
-  }
-
-  /// Resolve typed text to a canonical Champions item slug, or null if invalid.
-  String? _resolveHeldItemName(String raw) {
-    final q = raw.trim().toLowerCase();
-    if (q.isEmpty) return null;
-    final pool = _cachedValidItems ?? const <String>[];
-    final slug = q.replaceAll(' ', '-');
-    final spaced = q.replaceAll('-', ' ');
-    for (final item in pool) {
-      final clean = item.toLowerCase();
-      if (clean == q ||
-          clean == slug ||
-          clean == spaced ||
-          clean.replaceAll('-', ' ') == spaced) {
-        return clean;
-      }
-    }
-    return null;
   }
 
   Future<void> _addToTeam(String name) async {
@@ -624,11 +593,7 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
     } else if (formKey.contains('-mega-y')) {
       return item.endsWith('y') && item.contains('ite');
     } else {
-      return item.endsWith('ite') ||
-          item == 'red-orb' ||
-          item == 'blue-orb' ||
-          item == 'red orb' ||
-          item == 'blue orb';
+      return item.endsWith('ite') || item == 'red orb' || item == 'blue orb';
     }
   }
 
@@ -875,15 +840,15 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
             controller: controller,
             maxLines: 10,
             style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.92)),
-            cursorColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.85),
+                color: Theme.of(context).colorScheme.onInverseSurface),
+            cursorColor: Theme.of(context).colorScheme.inversePrimary,
             decoration: _adaptiveInputDecoration('').copyWith(
               hintText: 'Paste exported team text here',
               hintStyle: TextStyle(
                 color: Theme.of(context)
                     .colorScheme
-                    .onSurface
-                    .withValues(alpha: 0.45),
+                    .onInverseSurface
+                    .withValues(alpha: 0.5),
               ),
             ),
           ),
@@ -1033,38 +998,16 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
                   focusNode: _searchFocusNode,
                   autofocus: false,
                   style: TextStyle(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withValues(alpha: 0.92)),
-                  cursorColor: Theme.of(context)
-                      .colorScheme
-                      .primary
-                      .withValues(alpha: 0.85),
+                      color: Theme.of(context).colorScheme.onInverseSurface),
+                  cursorColor: Theme.of(context).colorScheme.inversePrimary,
                   decoration: _adaptiveInputDecoration('Search Pokémon').copyWith(
                     prefixIcon: Icon(
                       Icons.search,
                       color: Theme.of(context)
                           .colorScheme
-                          .onSurface
+                          .onInverseSurface
                           .withValues(alpha: 0.75),
                     ),
-                    suffixIcon: _searchController.text.isNotEmpty
-                        ? IconButton(
-                            tooltip: 'Clear search',
-                            onPressed: () {
-                              _searchController.clear();
-                              _filter('');
-                            },
-                            icon: Icon(
-                              Icons.clear,
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurface
-                                  .withValues(alpha: 0.75),
-                            ),
-                          )
-                        : null,
                   ),
                   onChanged: _filter,
                 ),
@@ -1113,32 +1056,21 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
                         ),
                       ),
                     )
-                  : _filtered.isEmpty
-                      ? Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Text(
-                              'No Pokémon match "${_searchController.text.trim()}".',
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(fontSize: 13),
-                            ),
+                  : ListView.builder(
+                      itemCount: _filtered.length,
+                      itemBuilder: (context, index) {
+                        final name = _filtered[index];
+                        return Semantics(
+                          button: true,
+                          label: 'Add $name to team',
+                          child: ListTile(
+                            dense: true,
+                            title: Text(name),
+                            onTap: () => _addToTeam(name),
                           ),
-                        )
-                      : ListView.builder(
-                          itemCount: _filtered.length,
-                          itemBuilder: (context, index) {
-                            final name = _filtered[index];
-                            return Semantics(
-                              button: true,
-                              label: 'Add $name to team',
-                              child: ListTile(
-                                dense: true,
-                                title: Text(name),
-                                onTap: () => _addToTeam(name),
-                              ),
-                            );
-                          },
-                        ),
+                        );
+                      },
+                    ),
             ),
           ],
         ),
@@ -1336,71 +1268,57 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
     );
   }
 
-  /// Soft high-contrast fields: muted gray/white fills, readable but not glaring.
+  /// High-contrast inverse decoration for low-vision users.
+  /// Fields use inverseSurface so they "pop" against the adaptive chrome.
   InputDecoration _adaptiveInputDecoration(String labelText) {
     final cs = Theme.of(context).colorScheme;
-    // Light wash of onSurface over surface → soft gray in both themes
-    final softFill = Color.alphaBlend(
-      cs.onSurface.withValues(alpha: 0.10),
-      cs.surfaceContainerHighest,
-    );
     final border = OutlineInputBorder(
-      borderSide: BorderSide(color: cs.outline.withValues(alpha: 0.45)),
+      borderSide: BorderSide(color: cs.onInverseSurface.withValues(alpha: 0.55)),
     );
     return InputDecoration(
       labelText: labelText,
       labelStyle: TextStyle(
-        color: cs.onSurfaceVariant.withValues(alpha: 0.90),
+        color: cs.onInverseSurface.withValues(alpha: 0.75),
         fontSize: 13,
       ),
-      floatingLabelStyle: TextStyle(
-        color: cs.primary.withValues(alpha: 0.90),
-      ),
+      floatingLabelStyle: TextStyle(color: cs.inversePrimary),
       filled: true,
-      fillColor: softFill,
+      fillColor: cs.inverseSurface,
       contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       isDense: true,
       border: border,
       enabledBorder: border,
       focusedBorder: OutlineInputBorder(
-        borderSide: BorderSide(
-          color: cs.primary.withValues(alpha: 0.75),
-          width: 1.5,
-        ),
+        borderSide: BorderSide(color: cs.inversePrimary, width: 2),
       ),
       errorStyle: TextStyle(color: cs.error),
     );
   }
 
-  /// Dropdown menu: soft elevated surface, not full inverse white/black.
-  Color get _dropdownMenuColor {
-    final cs = Theme.of(context).colorScheme;
-    return Color.alphaBlend(
-      cs.onSurface.withValues(alpha: 0.08),
-      cs.surfaceContainerHigh,
-    );
-  }
+  /// Dropdown menu panel matches inverse fields.
+  Color get _dropdownMenuColor =>
+      Theme.of(context).colorScheme.inverseSurface;
 
-  /// Body text inside fields / dropdowns.
+  /// Text inside inverse fields / dropdowns.
   Color get _fieldTextColor =>
-      Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.92);
+      Theme.of(context).colorScheme.onInverseSurface;
 
-  /// Primary actions — soft filled (primaryContainer), easier on the eyes.
+  /// Primary action buttons (Save, confirm, etc.) — inverse filled.
   ButtonStyle get _inverseFilledButtonStyle {
     final cs = Theme.of(context).colorScheme;
     return FilledButton.styleFrom(
-      backgroundColor: cs.primaryContainer.withValues(alpha: 0.85),
-      foregroundColor: cs.onPrimaryContainer,
-      disabledBackgroundColor: cs.surfaceContainerHighest.withValues(alpha: 0.5),
-      disabledForegroundColor: cs.onSurface.withValues(alpha: 0.38),
+      backgroundColor: cs.inversePrimary,
+      foregroundColor: cs.onInverseSurface,
+      disabledBackgroundColor: cs.inverseSurface.withValues(alpha: 0.4),
+      disabledForegroundColor: cs.onInverseSurface.withValues(alpha: 0.4),
     );
   }
 
-  /// Secondary / cancel — muted primary, not neon inverse.
+  /// Secondary/cancel text buttons on inverse-friendly contrast.
   ButtonStyle get _inverseTextButtonStyle {
     final cs = Theme.of(context).colorScheme;
     return TextButton.styleFrom(
-      foregroundColor: cs.primary.withValues(alpha: 0.90),
+      foregroundColor: cs.inversePrimary,
     );
   }
 
@@ -1447,8 +1365,8 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
                                       style: TextStyle(
                                           color: Theme.of(context)
                                               .colorScheme
-                                              .onSurface
-                                              .withValues(alpha: 0.70))),
+                                              .onInverseSurface
+                                              .withValues(alpha: 0.75))),
                                 ),
                                 ...moveOptions.map((m) => DropdownMenuItem(
                                       value: m,
@@ -1456,8 +1374,7 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
                                           style: TextStyle(
                                               color: Theme.of(context)
                                                   .colorScheme
-                                                  .onSurface
-                                                  .withValues(alpha: 0.92))),
+                                                  .onInverseSurface)),
                                     )),
                               ],
                               onChanged: (value) =>
@@ -1477,9 +1394,11 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
 
     if (panelName == 'details') {
       final abilityOptions = _abilitiesCache[index];
+      final itemController = _itemControllers[index];
+      final itemFocus = _itemFocusNodes[index];
 
       List<DropdownMenuItem<String>> genderItems;
-      final itemStyle = TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.92));
+      final itemStyle = TextStyle(color: Theme.of(context).colorScheme.onInverseSurface);
       if (member.genderRate == -1) {
         genderItems = [
           DropdownMenuItem(
@@ -1524,7 +1443,7 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
               return DropdownMenuItem<String>(
                 value: a['name'] as String,
                 child: Text(label,
-                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.92))),
+                    style: TextStyle(color: Theme.of(context).colorScheme.onInverseSurface)),
               );
             }).toList(),
             onChanged: (value) {
@@ -1566,7 +1485,7 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
             return DropdownMenuItem(
               value: n.name,
               child:
-                  Text(desc, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.92))),
+                  Text(desc, style: TextStyle(color: Theme.of(context).colorScheme.onInverseSurface)),
             );
           }).toList(),
           onChanged: (value) {
@@ -1575,136 +1494,99 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
         ),
       );
 
-      // Ensure controller exists before building the field
-      _ensureItemController(index);
-      final itemController = _itemControllers[index]!;
-      final itemFocus = _itemFocusNodes[index]!;
-
-      final itemField = Semantics(
-        label:
-            'Held item for ${member.name}, currently ${member.heldItem ?? "none"}. Type to search.',
-        textField: true,
-        child: RawAutocomplete<String>(
-          textEditingController: itemController,
-          focusNode: itemFocus,
-          optionsViewOpenDirection: OptionsViewOpenDirection.up,
-          optionsBuilder: (TextEditingValue value) {
-            final q = value.text.trim().toLowerCase();
-            final pool = _cachedValidItems ?? const <String>[];
-            if (q.isEmpty) return const Iterable<String>.empty();
-            return pool
-                .where((item) => item.toLowerCase().contains(q))
-                .take(20);
-          },
-          onSelected: (String selection) async {
-            // Apply immediately; focus listener must not wipe it
-            itemController.text = selection;
-            if (_team[index].heldItem != selection) {
-              await _setHeldItem(index, selection);
-            }
-            itemFocus.unfocus();
-          },
-          fieldViewBuilder: (
-            context,
-            textController,
-            focusNode,
-            onFieldSubmitted,
-          ) {
-            return TextField(
-              controller: textController,
-              focusNode: focusNode,
-              style: TextStyle(
-                color: Theme.of(context)
-                    .colorScheme
-                    .onSurface
-                    .withValues(alpha: 0.92),
-              ),
-              cursorColor: Theme.of(context)
-                  .colorScheme
-                  .primary
-                  .withValues(alpha: 0.85),
-              decoration: _adaptiveInputDecoration('Held Item').copyWith(
-                hintText: 'Type to search items…',
-                hintStyle: TextStyle(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onSurface
-                      .withValues(alpha: 0.45),
-                ),
-                suffixIcon: textController.text.isNotEmpty
-                    ? IconButton(
-                        tooltip: 'Clear held item',
-                        onPressed: () async {
-                          textController.clear();
-                          await _setHeldItem(index, '');
-                        },
-                        icon: Icon(
-                          Icons.clear,
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onSurface
-                              .withValues(alpha: 0.75),
-                        ),
-                      )
-                    : Icon(
-                        Icons.search,
+      final itemField = (itemController == null || itemFocus == null)
+          ? const Center(child: CircularProgressIndicator())
+          : Semantics(
+              label:
+                  'Held item for ${member.name}, currently ${member.heldItem ?? "none"}',
+              textField: true,
+              child: RawAutocomplete<String>(
+                textEditingController: itemController,
+                focusNode: itemFocus,
+                optionsBuilder: (TextEditingValue value) {
+                  final query = value.text.trim().toLowerCase();
+                  final pool = _cachedValidItems ?? const <String>[];
+                  if (query.isEmpty) {
+                    // Show a short default list so the user discovers items
+                    return pool.take(12);
+                  }
+                  return pool
+                      .where((item) => item.toLowerCase().contains(query))
+                      .take(20);
+                },
+                onSelected: (String selection) {
+                  itemController.text = selection;
+                  _commitHeldItem(index);
+                },
+                fieldViewBuilder: (
+                  context,
+                  textController,
+                  focusNode,
+                  onFieldSubmitted,
+                ) {
+                  return TextField(
+                    controller: textController,
+                    focusNode: focusNode,
+                    style: TextStyle(
                         color: Theme.of(context)
                             .colorScheme
-                            .onSurface
-                            .withValues(alpha: 0.75),
+                            .onInverseSurface),
+                    cursorColor:
+                        Theme.of(context).colorScheme.inversePrimary,
+                    decoration:
+                        _adaptiveInputDecoration('Held Item').copyWith(
+                      hintText: 'e.g. life orb, leftovers',
+                      hintStyle: TextStyle(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onInverseSurface
+                            .withValues(alpha: 0.5),
                       ),
-              ),
-              onEditingComplete: () {
-                _commitHeldItem(index);
-                focusNode.unfocus();
-              },
-              onSubmitted: (_) {
-                _commitHeldItem(index);
-                onFieldSubmitted();
-              },
-            );
-          },
-          optionsViewBuilder: (context, onSelected, options) {
-            final cs = Theme.of(context).colorScheme;
-            final soft = Color.alphaBlend(
-              cs.onSurface.withValues(alpha: 0.08),
-              cs.surfaceContainerHigh,
-            );
-            return Align(
-              alignment: Alignment.bottomLeft,
-              child: Material(
-                elevation: 6,
-                color: soft,
-                borderRadius: BorderRadius.circular(8),
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(
-                    maxHeight: 220,
-                    maxWidth: 320,
-                  ),
-                  child: ListView.builder(
-                    padding: EdgeInsets.zero,
-                    shrinkWrap: true,
-                    itemCount: options.length,
-                    itemBuilder: (context, i) {
-                      final option = options.elementAt(i);
-                      return ListTile(
-                        dense: true,
-                        title: Text(
-                          option,
-                          style: TextStyle(
-                            color: cs.onSurface.withValues(alpha: 0.92),
-                          ),
-                        ),
-                        onTap: () => onSelected(option),
-                      );
+                    ),
+                    onEditingComplete: () {
+                      _commitHeldItem(index);
+                      focusNode.unfocus();
                     },
-                  ),
-                ),
+                    onSubmitted: (_) {
+                      _commitHeldItem(index);
+                      onFieldSubmitted();
+                    },
+                  );
+                },
+                optionsViewBuilder: (context, onSelected, options) {
+                  final cs = Theme.of(context).colorScheme;
+                  return Align(
+                    alignment: Alignment.topLeft,
+                    child: Material(
+                      elevation: 4,
+                      color: cs.inverseSurface,
+                      borderRadius: BorderRadius.circular(8),
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(
+                            maxHeight: 200, maxWidth: 280),
+                        child: ListView.builder(
+                          padding: EdgeInsets.zero,
+                          shrinkWrap: true,
+                          itemCount: options.length,
+                          itemBuilder: (context, i) {
+                            final option = options.elementAt(i);
+                            return ListTile(
+                              dense: true,
+                              title: Text(
+                                option,
+                                style:
+                                    TextStyle(color: cs.onInverseSurface),
+                              ),
+                              onTap: () => onSelected(option),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  );
+                },
               ),
             );
-          },
-        ),
-      );
 
       // 2 columns × 2 rows: Item | Gender / Ability | Nature
       return Column(
@@ -1798,12 +1680,10 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
                             style: TextStyle(
                                 color: Theme.of(context)
                                     .colorScheme
-                                    .onSurface
-                                    .withValues(alpha: 0.92)),
+                                    .onInverseSurface),
                             cursorColor: Theme.of(context)
                                 .colorScheme
-                                .primary
-                                .withValues(alpha: 0.85),
+                                .inversePrimary,
                             inputFormatters: [
                               FilteringTextInputFormatter.digitsOnly,
                             ],
