@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.pokemon_mb_companion"
+    namespace = "com.jonjon.pokeapi_champions"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -16,7 +16,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.pokemon_mb_companion"
+        applicationId = "com.jonjon.pokeapi_champions"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
