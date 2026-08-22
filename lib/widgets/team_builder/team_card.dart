@@ -149,13 +149,12 @@ class TeamCard extends StatelessWidget {
             ),
             Divider(height: 1, color: theme.dividerColor),
             Container(
-              color: theme.colorScheme.surfaceContainerHighest,
+              color: AdaptiveFieldTheme.containerColor(context),
               padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   _ToolbarToggle(
-                    emoji: '⚙️',
                     label: 'Details',
                     isActive: activePanel == 'details',
                     semanticLabel: activePanel == 'details'
@@ -164,7 +163,6 @@ class TeamCard extends StatelessWidget {
                     onPressed: () => onTogglePanel('details'),
                   ),
                   _ToolbarToggle(
-                    emoji: '⚔️',
                     label: 'Moves',
                     isActive: activePanel == 'moves',
                     semanticLabel: activePanel == 'moves'
@@ -173,7 +171,6 @@ class TeamCard extends StatelessWidget {
                     onPressed: () => onTogglePanel('moves'),
                   ),
                   _ToolbarToggle(
-                    emoji: '📈',
                     label: 'EVs',
                     isActive: activePanel == 'evs',
                     semanticLabel: activePanel == 'evs'
@@ -182,7 +179,6 @@ class TeamCard extends StatelessWidget {
                     onPressed: () => onTogglePanel('evs'),
                   ),
                   _ToolbarToggle(
-                    emoji: '📊',
                     label: 'Stats',
                     isActive: false,
                     semanticLabel: 'Show calculated stats for ${member.name}',
@@ -194,7 +190,7 @@ class TeamCard extends StatelessWidget {
             if (activePanel != null) ...[
               Divider(height: 1, color: theme.dividerColor),
               Container(
-                color: theme.colorScheme.surfaceContainerHigh,
+                color: AdaptiveFieldTheme.containerColor(context),
                 width: double.infinity,
                 padding: const EdgeInsets.all(10.0),
                 child: DefaultTextStyle(
@@ -251,14 +247,12 @@ class TeamCard extends StatelessWidget {
 }
 
 class _ToolbarToggle extends StatelessWidget {
-  final String emoji;
   final String label;
   final bool isActive;
   final VoidCallback onPressed;
   final String? semanticLabel;
 
   const _ToolbarToggle({
-    required this.emoji,
     required this.label,
     required this.isActive,
     required this.onPressed,
@@ -268,8 +262,9 @@ class _ToolbarToggle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final Color bg = isActive ? cs.primary.withValues(alpha: 0.25) : Colors.transparent;
-    final Color emojiColor = isActive ? cs.primary : cs.onSurface;
+    final Color bg = isActive ? Colors.grey.withValues(alpha: 0.35) : Colors.transparent;
+    final Color textColor = isActive ? cs.onSurface : cs.onSurface.withValues(alpha: 0.70);
+    final FontWeight weight = isActive ? FontWeight.bold : FontWeight.normal;
 
     return Semantics(
       button: true,
@@ -279,12 +274,12 @@ class _ToolbarToggle extends StatelessWidget {
         onTap: onPressed,
         borderRadius: BorderRadius.circular(8),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(8)),
           child: ExcludeSemantics(
             child: Text(
-              emoji,
-              style: TextStyle(fontSize: 22, color: emojiColor, height: 1.0),
+              label,
+              style: TextStyle(fontSize: 13, color: textColor, fontWeight: weight),
             ),
           ),
         ),

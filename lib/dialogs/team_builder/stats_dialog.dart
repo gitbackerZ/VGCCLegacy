@@ -72,10 +72,14 @@ Future<void> showStatsDialog(
         ),
       ),
       actions: [
-        FilledButton(
-          style: AdaptiveFieldTheme.filledButtonStyle(context),
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Close'),
+        Semantics(
+          button: true,
+          label: 'Close stats dialog for $memberName',
+          child: FilledButton(
+            style: AdaptiveFieldTheme.filledButtonStyle(context),
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
         ),
       ],
     ),

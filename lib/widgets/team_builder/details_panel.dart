@@ -34,8 +34,7 @@ class DetailsPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final itemStyle =
-        TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.92));
+    final itemStyle = TextStyle(color: AdaptiveFieldTheme.fieldTextColor(context));
 
     List<DropdownMenuItem<String>> genderItems;
     if (member.genderRate == -1) {
@@ -149,13 +148,16 @@ class DetailsPanel extends StatelessWidget {
               hintText: 'Type to search items…',
               hintStyle: TextStyle(color: AdaptiveFieldTheme.hintTextColor(context)),
               suffixIcon: textController.text.isNotEmpty
-                  ? IconButton(
-                      tooltip: 'Clear held item',
-                      onPressed: () async {
-                        textController.clear();
-                        await onClearHeldItem();
-                      },
-                      icon: Icon(Icons.clear, color: AdaptiveFieldTheme.iconColor(context)),
+                  ? Semantics(
+                      button: true,
+                      label: 'Clear held item for ${member.name}',
+                      child: IconButton(
+                        onPressed: () async {
+                          textController.clear();
+                          await onClearHeldItem();
+                        },
+                        icon: Icon(Icons.clear, color: AdaptiveFieldTheme.iconColor(context)),
+                      ),
                     )
                   : Icon(Icons.search, color: AdaptiveFieldTheme.iconColor(context)),
             ),
@@ -186,11 +188,15 @@ class DetailsPanel extends StatelessWidget {
                   itemCount: options.length,
                   itemBuilder: (context, i) {
                     final option = options.elementAt(i);
-                    return ListTile(
-                      dense: true,
-                      title:
-                          Text(option, style: TextStyle(color: cs.onSurface.withValues(alpha: 0.92))),
-                      onTap: () => onSelected(option),
+                    return Semantics(
+                      button: true,
+                      label: 'Set held item to $option',
+                      child: ListTile(
+                        dense: true,
+                        title: Text(option,
+                            style: TextStyle(color: cs.onSurface.withValues(alpha: 0.92))),
+                        onTap: () => onSelected(option),
+                      ),
                     );
                   },
                 ),
@@ -201,7 +207,6 @@ class DetailsPanel extends StatelessWidget {
       ),
     );
 
-    // 2 columns × 2 rows: Item | Gender / Ability | Nature
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

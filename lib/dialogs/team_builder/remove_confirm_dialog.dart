@@ -9,15 +9,23 @@ Future<bool?> showRemoveConfirmDialog(BuildContext context, {required String nam
       title: const Text('Remove Pokémon?'),
       content: Text('Remove $name from your team? This cannot be undone.'),
       actions: [
-        TextButton(
-          style: AdaptiveFieldTheme.textButtonStyle(context),
-          onPressed: () => Navigator.pop(context, false),
-          child: const Text('Cancel'),
+        Semantics(
+          button: true,
+          label: 'Cancel removing $name',
+          child: TextButton(
+            style: AdaptiveFieldTheme.textButtonStyle(context),
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
         ),
-        FilledButton(
-          style: AdaptiveFieldTheme.filledButtonStyle(context),
-          onPressed: () => Navigator.pop(context, true),
-          child: Text('Remove $name'),
+        Semantics(
+          button: true,
+          label: 'Confirm removal of $name from team',
+          child: FilledButton(
+            style: AdaptiveFieldTheme.filledButtonStyle(context),
+            onPressed: () => Navigator.pop(context, true),
+            child: Text('Remove $name'),
+          ),
         ),
       ],
     ),

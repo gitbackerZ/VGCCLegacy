@@ -15,7 +15,7 @@ Future<String?> showImportPasteDialog(BuildContext context) {
         child: TextField(
           controller: controller,
           maxLines: 10,
-          style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.92)),
+          style: TextStyle(color: AdaptiveFieldTheme.fieldTextColor(context)),
           cursorColor: AdaptiveFieldTheme.cursorColor(context),
           decoration: AdaptiveFieldTheme.inputDecoration(context, '').copyWith(
             hintText: 'Paste exported team text here',
@@ -24,15 +24,23 @@ Future<String?> showImportPasteDialog(BuildContext context) {
         ),
       ),
       actions: [
-        TextButton(
-          style: AdaptiveFieldTheme.textButtonStyle(context),
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+        Semantics(
+          button: true,
+          label: 'Cancel import',
+          child: TextButton(
+            style: AdaptiveFieldTheme.textButtonStyle(context),
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
         ),
-        FilledButton(
-          style: AdaptiveFieldTheme.filledButtonStyle(context),
-          onPressed: () => Navigator.pop(context, controller.text),
-          child: const Text('Parse'),
+        Semantics(
+          button: true,
+          label: 'Parse pasted team text',
+          child: FilledButton(
+            style: AdaptiveFieldTheme.filledButtonStyle(context),
+            onPressed: () => Navigator.pop(context, controller.text),
+            child: const Text('Parse'),
+          ),
         ),
       ],
     ),
@@ -48,20 +56,32 @@ Future<String?> showImportModeDialog(BuildContext context, {required int parsedC
       title: const Text('Import Mode'),
       content: Text('Found $parsedCount Pokémon in the pasted text. How should this be applied?'),
       actions: [
-        TextButton(
-          style: AdaptiveFieldTheme.textButtonStyle(context),
-          onPressed: () => Navigator.pop(context, 'cancel'),
-          child: const Text('Cancel'),
+        Semantics(
+          button: true,
+          label: 'Cancel import',
+          child: TextButton(
+            style: AdaptiveFieldTheme.textButtonStyle(context),
+            onPressed: () => Navigator.pop(context, 'cancel'),
+            child: const Text('Cancel'),
+          ),
         ),
-        FilledButton(
-          style: AdaptiveFieldTheme.filledButtonStyle(context),
-          onPressed: () => Navigator.pop(context, 'add'),
-          child: const Text('Add to Team'),
+        Semantics(
+          button: true,
+          label: 'Add $parsedCount imported Pokémon to current team',
+          child: FilledButton(
+            style: AdaptiveFieldTheme.filledButtonStyle(context),
+            onPressed: () => Navigator.pop(context, 'add'),
+            child: const Text('Add to Team'),
+          ),
         ),
-        FilledButton(
-          style: AdaptiveFieldTheme.filledButtonStyle(context),
-          onPressed: () => Navigator.pop(context, 'replace'),
-          child: const Text('Replace Team'),
+        Semantics(
+          button: true,
+          label: 'Replace current team with $parsedCount imported Pokémon',
+          child: FilledButton(
+            style: AdaptiveFieldTheme.filledButtonStyle(context),
+            onPressed: () => Navigator.pop(context, 'replace'),
+            child: const Text('Replace Team'),
+          ),
         ),
       ],
     ),

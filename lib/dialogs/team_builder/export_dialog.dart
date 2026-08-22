@@ -35,22 +35,30 @@ Future<void> showExportResultDialog(BuildContext context, {required String text}
         ),
       ),
       actions: [
-        FilledButton(
-          style: AdaptiveFieldTheme.filledButtonStyle(context),
-          onPressed: () async {
-            await Clipboard.setData(ClipboardData(text: text));
-            if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Copied to clipboard')),
-              );
-            }
-          },
-          child: const Text('Copy'),
+        Semantics(
+          button: true,
+          label: 'Copy exported team text to clipboard',
+          child: FilledButton(
+            style: AdaptiveFieldTheme.filledButtonStyle(context),
+            onPressed: () async {
+              await Clipboard.setData(ClipboardData(text: text));
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Copied to clipboard')),
+                );
+              }
+            },
+            child: const Text('Copy'),
+          ),
         ),
-        TextButton(
-          style: AdaptiveFieldTheme.textButtonStyle(context),
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Close'),
+        Semantics(
+          button: true,
+          label: 'Close export dialog',
+          child: TextButton(
+            style: AdaptiveFieldTheme.textButtonStyle(context),
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
         ),
       ],
     ),

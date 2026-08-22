@@ -792,13 +792,16 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
                   decoration: AdaptiveFieldTheme.inputDecoration(context, 'Search Pokémon').copyWith(
                     prefixIcon: Icon(Icons.search, color: AdaptiveFieldTheme.iconColor(context)),
                     suffixIcon: _searchController.text.isNotEmpty
-                        ? IconButton(
-                            tooltip: 'Clear search',
-                            onPressed: () {
-                              _searchController.clear();
-                              _filter('');
-                            },
-                            icon: Icon(Icons.clear, color: AdaptiveFieldTheme.iconColor(context)),
+                        ? Semantics(
+                            button: true,
+                            label: 'Clear search',
+                            child: IconButton(
+                              onPressed: () {
+                                _searchController.clear();
+                                _filter('');
+                              },
+                              icon: Icon(Icons.clear, color: AdaptiveFieldTheme.iconColor(context)),
+                            ),
                           )
                         : null,
                   ),
