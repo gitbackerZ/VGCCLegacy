@@ -28,6 +28,7 @@ class TeamCard extends StatelessWidget {
   final VoidCallback onRemove;
   final void Function(String panelName) onTogglePanel;
   final VoidCallback onShowStats;
+  final VoidCallback onShowInfo;
 
   final void Function(int slot, String? move) onSetMove;
   final void Function(String gender) onSetGender;
@@ -55,6 +56,7 @@ class TeamCard extends StatelessWidget {
     required this.onRemove,
     required this.onTogglePanel,
     required this.onShowStats,
+    required this.onShowInfo,
     required this.onSetMove,
     required this.onSetGender,
     required this.onSetAbility,
@@ -183,6 +185,13 @@ class TeamCard extends StatelessWidget {
                     isActive: false,
                     semanticLabel: 'Show calculated stats for ${member.name}',
                     onPressed: onShowStats,
+                  ),
+                  _ToolbarToggle(
+                    label: 'Info',
+                    isActive: false,
+                    semanticLabel:
+                        'Show species info for ${member.name}: types, height, weight, abilities, and move learn set',
+                    onPressed: onShowInfo,
                   ),
                 ],
               ),

@@ -12,6 +12,7 @@ import '../widgets/team_builder/team_card.dart';
 import '../widgets/team_builder/pokemon_search_list.dart';
 import '../dialogs/team_builder/remove_confirm_dialog.dart';
 import '../dialogs/team_builder/stats_dialog.dart';
+import '../dialogs/team_builder/pokemon_info_dialog.dart';
 import '../dialogs/team_builder/export_dialog.dart';
 import '../dialogs/team_builder/import_dialog.dart';
 
@@ -625,6 +626,24 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
     }
   }
 
+  /// Shows the full species info dialog (types, gender rate, height, weight,
+  /// abilities, move learn set). Details are fetched via [PokeApiService],
+  /// which transparently checks its local cache before hitting PokeAPI —
+  /// so repeat lookups for the same Pokémon are near-instant.
+  Future<void> _showPokemonInfo(int index) async {
+    _unfocus();
+    final member = _team[index];
+    try {
+      final details = await _service.getPokemonDetails(member.name);
+      if (!mounted) return;
+      await showPokemonInfoDialog(context, details);
+    } catch (e) {
+      _announce('Could not load info for ${member.name}.');
+    } finally {
+      _unfocus();
+    }
+  }
+
   Future<void> _showExportDialog() async {
     _unfocus();
     if (_team.isEmpty) {
@@ -883,6 +902,7 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
       onRemove: () => _confirmRemoveFromTeam(index),
       onTogglePanel: (panel) => _togglePanel(index, panel),
       onShowStats: () => _showStats(index),
+      onShowInfo: () => _showPokemonInfo(index),
       onSetMove: (slot, move) => _setMove(index, slot, move),
       onSetGender: (gender) => _setGender(index, gender),
       onSetAbility: (ability) => _setAbility(index, ability),

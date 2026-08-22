@@ -1,10 +1,19 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:flutter/services.dart' show rootBundle;
+import '../models/pokemon_details.dart';
+import 'pokemon_details_cache.dart';
 
 class PokeApiService {
   static const String baseUrl = 'https://pokeapi.co/api/v2';
-  List<String>? _cachedHeldItems;
+
+  /// PokeAPI version_group name for Gen 9 main-series games. Used to scope
+  /// move-learn data to what's actually legal in Champions (Scarlet/Violet),
+  /// instead of the unfiltered, all-generations move list PokeAPI returns
+  /// by default. Filtering by name (not numeric id) because version_group
+  /// ids are not guaranteed stable as PokeAPI adds more groups over time.
+  static const String currentVersionGroup = 'scarlet-violet';
+
+  final PokemonDetailsCache _detailsCache = PokemonDetailsCache();
 
   Future<Map<String, dynamic>> getPokemon(String name) async {
     final response = await http.get(
@@ -105,14 +114,105 @@ class PokeApiService {
     return results;
   }
 
-  Future<List<String>> getMovesForPokemon(String name) async {
+  /// Move names learnable by [name], scoped to [versionGroup] (defaults to
+  /// the current Champions ruleset's generation). Deduplicated and sorted.
+  ///
+  /// PokeAPI's raw `moves` list is NOT scoped to any generation by default —
+  /// it includes every version_group a move has ever been learnable in
+  /// (currently 32 groups spanning Gen 1 through Gen 9 plus side titles).
+  /// This filters down to just [versionGroup] so the move picker only shows
+  /// moves that are actually legal right now.
+  Future<List<String>> getMovesForPokemon(
+    String name, {
+    String versionGroup = currentVersionGroup,
+  }) async {
     final data = await getPokemon(name);
-    final moves = data['moves'] as List;
-    return moves.map((m) => m['move']['name'] as String).toList()..sort();
+    return _extractMoveNamesForVersionGroup(data, versionGroup);
+  }
+
+  /// Full move-learn set (move + method + level) for [name], scoped to
+  /// [versionGroup]. Use this instead of [getMovesForPokemon] when you need
+  /// to distinguish level-up vs. machine vs. egg vs. tutor moves.
+  Future<List<LearnableMove>> getMoveLearnSet(
+    String name, {
+    String versionGroup = currentVersionGroup,
+  }) async {
+    final data = await getPokemon(name);
+    return _extractMoveLearnSet(data, versionGroup);
   }
 
   Future<Map<String, int>> getBaseStats(String name) async {
     final data = await getPokemon(name);
+    return _extractBaseStats(data);
+  }
+
+  Future<List<Map<String, dynamic>>> getAbilitiesForPokemon(String name) async {
+    final data = await getPokemon(name);
+    return _extractAbilities(data);
+  }
+
+  Future<List<String>> getTypesForPokemon(String name) async {
+    final data = await getPokemon(name);
+    return _extractTypes(data);
+  }
+
+  /// Full detail bundle matching: name, gender_rate, types, base_stats,
+  /// abilities, height, weight, move_learn_set.
+  ///
+  /// Checks the local cache first (memory, then disk) and only hits PokeAPI
+  /// on a genuine miss, so repeated lookups for the same Pokémon — across
+  /// screens, sessions, or app restarts — don't re-fetch. Pass
+  /// [forceRefresh]: true to bypass the cache and re-pull from the network.
+  Future<PokemonDetails> getPokemonDetails(
+    String name, {
+    String versionGroup = currentVersionGroup,
+    bool forceRefresh = false,
+  }) async {
+    final normalizedName = name.toLowerCase().trim();
+
+    if (!forceRefresh) {
+      final cached = await _detailsCache.get(versionGroup, normalizedName);
+      if (cached != null) return cached;
+    }
+
+    final data = await getPokemon(normalizedName);
+    final heightDecimeters = (data['height'] as num).toDouble();
+    final weightHectograms = (data['weight'] as num).toDouble();
+    final genderRate = await getGenderRate(normalizedName);
+
+    final details = PokemonDetails(
+      name: data['name'] as String,
+      genderRate: genderRate,
+      types: _extractTypes(data),
+      baseStats: _extractBaseStats(data),
+      abilities: _extractAbilities(data),
+      heightMeters: heightDecimeters / 10.0,
+      weightKilograms: weightHectograms / 10.0,
+      moveLearnSet: _extractMoveLearnSet(data, versionGroup),
+    );
+
+    await _detailsCache.put(versionGroup, details);
+    return details;
+  }
+
+  /// Wipes the cached details for [versionGroup] (defaults to current),
+  /// forcing the next lookup for every Pokémon to re-fetch from PokeAPI.
+  Future<void> clearPokemonDetailsCache({
+    String versionGroup = currentVersionGroup,
+  }) =>
+      _detailsCache.clear(versionGroup);
+
+  // ---- extraction helpers (operate on an already-fetched /pokemon payload) ----
+
+  List<String> _extractTypes(Map<String, dynamic> data) {
+    final types = data['types'] as List;
+    // Preserve official slot ordering (primary type first).
+    final sorted = List<dynamic>.from(types)
+      ..sort((a, b) => (a['slot'] as int).compareTo(b['slot'] as int));
+    return sorted.map((t) => t['type']['name'] as String).toList();
+  }
+
+  Map<String, int> _extractBaseStats(Map<String, dynamic> data) {
     final stats = data['stats'] as List;
     final Map<String, int> result = {};
     for (final s in stats) {
@@ -121,8 +221,7 @@ class PokeApiService {
     return result;
   }
 
-  Future<List<Map<String, dynamic>>> getAbilitiesForPokemon(String name) async {
-    final data = await getPokemon(name);
+  List<Map<String, dynamic>> _extractAbilities(Map<String, dynamic> data) {
     final abilities = data['abilities'] as List;
     return abilities
         .map((a) => {
@@ -132,74 +231,51 @@ class PokeApiService {
         .toList();
   }
 
-  /// Champions held-item pool from local JSON (PokeAPI-compatible hyphens).
-  /// Falls back to a broad PokéAPI category scrape only if the asset is missing.
-  Future<List<String>> getHeldItemNames() async {
-    if (_cachedHeldItems != null) return _cachedHeldItems!;
+  List<LearnableMove> _extractMoveLearnSet(
+    Map<String, dynamic> data,
+    String versionGroup,
+  ) {
+    final moves = data['moves'] as List;
+    final List<LearnableMove> result = [];
 
-    // Preferred: curated Champions pool shipped with the app.
-    try {
-      final raw =
-          await rootBundle.loadString('lib/data/champions_held_items.json');
-      final decoded = json.decode(raw);
-      final List<dynamic> list = decoded is Map
-          ? (decoded['allowed_held_items'] as List? ?? const [])
-          : (decoded as List);
-      final items = list
-          .map((e) => (e as String).toLowerCase().trim())
-          .where((e) => e.isNotEmpty)
-          .toSet()
-          .toList()
-        ..sort();
-      if (items.isNotEmpty) {
-        _cachedHeldItems = items;
-        return _cachedHeldItems!;
-      }
-    } catch (_) {
-      // Asset missing or malformed — fall through to network scrape.
-    }
+    for (final m in moves) {
+      final String moveName = m['move']['name'] as String;
+      final versionGroupDetails = m['version_group_details'] as List;
 
-    // Fallback: scrape PokéAPI item categories (broader than Champions).
-    final categoriesToFetch = [
-      'held-items',
-      'choice',
-      'type-enhancement',
-      'species-specific',
-      'stat-boosts',
-      'baking-only',
-      'plates',
-      'z-crystals',
-      'in-a-pinch',
-      'jewels',
-      'mega-stones',
-      'spelunking',
-      'effort-drop',
-      'medicine',
-      'flute',
-      'vitamins',
-    ];
+      for (final vgd in versionGroupDetails) {
+        final String vgName = vgd['version_group']['name'] as String;
+        if (vgName != versionGroup) continue;
 
-    final Set<String> heldItems = {};
+        final String method = vgd['move_learn_method']['name'] as String;
+        final int level = vgd['level_learned_at'] as int;
 
-    for (final category in categoriesToFetch) {
-      try {
-        final response = await http.get(
-          Uri.parse('$baseUrl/item-category/$category'),
-        );
-        if (response.statusCode == 200) {
-          final data = json.decode(response.body);
-          final items = data['items'] as List;
-          for (final item in items) {
-            // Keep PokeAPI slug form (hyphenated) for consistency with JSON.
-            heldItems.add((item['name'] as String).toLowerCase());
-          }
-        }
-      } catch (e) {
-        continue;
+        result.add(LearnableMove(
+          name: moveName,
+          learnMethod: method,
+          levelLearnedAt: level > 0 ? level : null,
+        ));
       }
     }
 
-    _cachedHeldItems = heldItems.toList()..sort();
-    return _cachedHeldItems!;
+    // A move can appear via multiple methods (e.g. level-up AND machine) —
+    // keep all distinct (name, method, level) combos but drop exact duplicates.
+    final seen = <String>{};
+    final deduped = <LearnableMove>[];
+    for (final lm in result) {
+      final key = '${lm.name}|${lm.learnMethod}|${lm.levelLearnedAt}';
+      if (seen.add(key)) deduped.add(lm);
+    }
+
+    deduped.sort((a, b) => a.name.compareTo(b.name));
+    return deduped;
+  }
+
+  List<String> _extractMoveNamesForVersionGroup(
+    Map<String, dynamic> data,
+    String versionGroup,
+  ) {
+    final learnSet = _extractMoveLearnSet(data, versionGroup);
+    final names = learnSet.map((lm) => lm.name).toSet().toList()..sort();
+    return names;
   }
 }
