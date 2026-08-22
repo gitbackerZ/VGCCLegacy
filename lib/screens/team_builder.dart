@@ -183,7 +183,7 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
     }
 
     try {
-      _cachedValidItems ??= await _service.getHeldItemNames();
+      _cachedValidItems ??= await _loadValidItemNames();
       final canonical = _resolveHeldItemName(raw);
       if (canonical != null) {
         if (_team[index].heldItem != canonical) {
@@ -219,9 +219,12 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
     try {
       final rosterJson = await rootBundle.loadString('lib/data/champions_roster.json');
       final roster = json.decode(rosterJson);
-      final List<String> allowed = List<String>.from(roster['allowed_pokemon']);
+      final List<dynamic> allLegal = roster['all_legal'] as List<dynamic>;
+      final List<String> allowed = allLegal
+          .map((entry) => entry['pokeapi'] as String)
+          .toList();
 
-      final itemsFuture = _service.getHeldItemNames();
+      final itemsFuture = _loadValidItemNames();
       await _loadSavedTeam();
       try {
         _cachedValidItems = await itemsFuture;
@@ -243,6 +246,15 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
         _loading = false;
       });
     }
+  }
+
+  /// Loads the flat list of valid Champions held-item slugs from the local
+  /// items JSON (keys of the "items" map), used for autocomplete + validation.
+  Future<List<String>> _loadValidItemNames() async {
+    final itemsJson = await rootBundle.loadString('lib/data/champions_items.json');
+    final decoded = json.decode(itemsJson);
+    final Map<String, dynamic> items = decoded['items'] as Map<String, dynamic>;
+    return items.keys.toList();
   }
 
   Future<void> _loadSavedTeam() async {
@@ -476,7 +488,7 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
         _ensureItemController(index);
         if (_cachedValidItems == null) {
           try {
-            _cachedValidItems = await _service.getHeldItemNames();
+            _cachedValidItems = await _loadValidItemNames();
           } catch (_) {}
         }
       }

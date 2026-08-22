@@ -1,260 +1,2003 @@
 {
-  "allowed_pokemon": [
-    "abomasnow",
-    "absol",
-    "aegislash",
-    "aerodactyl",
-    "aggron",
-    "alakazam",
-    "alcremie-caramel-swirl",
-    "alcremie-lemon-cream",
-    "alcremie-matcha-cream",
-    "alcremie-mint-cream",
-    "alcremie-rainbow-swirl",
-    "alcremie-ruby-cream",
-    "alcremie-ruby-swirl",
-    "alcremie-salted-cream",
-    "alcremie-vanilla-cream",
-    "altaria",
-    "ampharos",
-    "annihilape",
-    "appletun",
-    "araquanid",
-    "arbok",
-    "arcanine",
-    "arcanine-hisui",
-    "archaludon",
-    "ariados",
-    "armarouge",
-    "aromatisse",
-    "audino",
-    "aurorus",
-    "avalugg",
-    "avalugg-hisui",
-    "azumarill",
-    "banette",
-    "barbaracle",
-    "basculegion-female",
-    "basculegion-male",
-    "bastiodon",
-    "beartic",
-    "beedrill",
-    "bellibolt",
-    "blastoise",
-    "blaziken",
-    "camerupt",
-    "castform",
-    "ceruledge",
-    "chandelure",
-    "charizard",
-    "chesnaught",
-    "chimecho",
-    "clawitzer",
-    "clefable",
-    "cofagrigus",
-    "conkeldurr",
-    "corviknight",
-    "crabominable",
-    "decidueye",
-    "decidueye-hisui",
-    "dedenne",
-    "delphox",
-    "diggersby",
-    "ditto",
-    "dragalge",
-    "dragapult",
-    "dragonite",
-    "drampa",
-    "eelektross",
-    "emboar",
-    "emolga",
-    "empoleon",
-    "espathra",
-    "espeon",
-    "excadrill",
-    "falinks",
-    "farigiraf",
-    "feraligatr",
-    "flapple",
-    "flareon",
-    "florges-blue",
-    "florges-orange",
-    "florges-red",
-    "florges-white",
-    "florges-yellow",
-    "forretress",
-    "froslass",
-    "furfrou",
-    "furfrou-dandy",
-    "furfrou-matron",
-    "gallade",
-    "garbodor",
-    "garchomp",
-    "gardevoir",
-    "garganacl",
-    "gengar",
-    "gholdengo",
-    "glaceon",
-    "glalie",
-    "glimmora",
-    "gliscor",
-    "golurk",
-    "goodra",
-    "goodra-hisui",
-    "gourgeist-average",
-    "gourgeist-large",
-    "gourgeist-small",
-    "gourgeist-super",
-    "greninja",
-    "grimmsnarl",
-    "gyarados",
-    "hatterene",
-    "hawlucha",
-    "heliolisk",
-    "heracross",
-    "hippowdon",
-    "houndoom",
-    "houndstone",
-    "hydrapple",
-    "hydreigon",
-    "incineroar",
-    "infernape",
-    "jolteon",
-    "kangaskhan",
-    "kingambit",
-    "kleavor",
-    "klefki",
-    "kommo-o",
-    "krookodile",
-    "leafeon",
-    "liepard",
-    "lopunny",
-    "lucario",
-    "luxray",
-    "lycanroc-dusk",
-    "lycanroc-midday",
-    "lycanroc-midnight",
-    "machamp",
-    "malamar",
-    "mamoswine",
-    "manectric",
-    "maushold-family-of-four",
-    "maushold-family-of-three",
-    "mawile",
-    "medicham",
-    "meganium",
-    "meowscarada",
-    "meowstic-female",
-    "meowstic-male",
-    "metagross",
-    "milotic",
-    "mimikyu",
-    "morpeko",
-    "mr-rime",
-    "mudsdale",
-    "musharna",
-    "ninetales",
-    "ninetales-alola",
-    "noivern",
-    "oranguru",
-    "orthworm",
-    "overqwil",
-    "palafin",
-    "pangoro",
-    "passimian",
-    "pelipper",
-    "pidgeot",
-    "pikachu",
-    "pinsir",
-    "politoed",
-    "polteageist-antique",
-    "polteageist-phony",
-    "primarina",
-    "pyroar",
-    "quaquaval",
-    "qwilfish",
-    "raichu",
-    "raichu-alola",
-    "rampardos",
-    "reuniclus",
-    "rhyperior",
-    "roserade",
-    "rotom",
-    "rotom-fan",
-    "rotom-frost",
-    "rotom-heat",
-    "rotom-mow",
-    "rotom-wash",
-    "runerigus",
-    "sableye",
-    "salazzle",
-    "samurott",
-    "samurott-hisui",
-    "sandaconda",
-    "sceptile",
-    "scizor",
-    "scolipede",
-    "scovillain",
-    "scrafty",
-    "serperior",
-    "sharpedo",
-    "simipour",
-    "simisage",
-    "simisear",
-    "sinistcha-masterpiece",
-    "sinistcha-unremarkable",
-    "skarmory",
-    "skeledirge",
-    "slowbro",
-    "slowbro-galar",
-    "slowking",
-    "slowking-galar",
-    "slurpuff",
-    "sneasler",
-    "snorlax",
-    "spiritomb",
-    "staraptor",
-    "starmie",
-    "steelix",
-    "stunfisk",
-    "stunfisk-galar",
-    "swampert",
-    "sylveon",
-    "talonflame",
-    "tauros",
-    "tauros-paldea-aqua-breed",
-    "tauros-paldea-blaze-breed",
-    "tauros-paldea-combat-breed",
-    "tinkaton",
-    "torkoal",
-    "torterra",
-    "toucannon",
-    "toxapex",
-    "toxicroak",
-    "trevenant",
-    "tsareena",
-    "typhlosion",
-    "typhlosion-hisui",
-    "tyranitar",
-    "tyrantrum",
-    "umbreon",
-    "vanilluxe",
-    "vaporeon",
-    "venusaur",
-    "victreebel",
-    "vileplume",
-    "vivillon-high-plains",
-    "volcarona",
-    "watchog",
-    "weavile",
-    "whimsicott",
-    "wyrdeer",
-    "zoroark",
-    "zoroark-hisui"
+  "source": {
+    "game": "Pokemon Champions",
+    "rosters": [
+      "Regular Roster M-A",
+      "Regular Roster M-B"
+    ],
+    "m_a_count": 229,
+    "m_b_count": 251,
+    "m_b_new_count": 22,
+    "pokeapi_field_note": "pokeapi is intended to be used as the Pokémon species/form name in a PokéAPI /pokemon/{name} or /pokemon-form/{name} request."
+  },
+  "regular_roster": [
+    {
+      "pokeapi": "venusaur"
+    },
+    {
+      "pokeapi": "charizard"
+    },
+    {
+      "pokeapi": "blastoise"
+    },
+    {
+      "pokeapi": "beedrill"
+    },
+    {
+      "pokeapi": "pidgeot"
+    },
+    {
+      "pokeapi": "arbok"
+    },
+    {
+      "pokeapi": "pikachu"
+    },
+    {
+      "pokeapi": "raichu"
+    },
+    {
+      "pokeapi": "raichu-alolan"
+    },
+    {
+      "pokeapi": "clefable"
+    },
+    {
+      "pokeapi": "ninetales"
+    },
+    {
+      "pokeapi": "ninetales-alolan"
+    },
+    {
+      "pokeapi": "arcanine"
+    },
+    {
+      "pokeapi": "arcanine-hisui"
+    },
+    {
+      "pokeapi": "alakazam"
+    },
+    {
+      "pokeapi": "machamp"
+    },
+    {
+      "pokeapi": "victreebel"
+    },
+    {
+      "pokeapi": "slowbro"
+    },
+    {
+      "pokeapi": "slowbro-galar"
+    },
+    {
+      "pokeapi": "gengar"
+    },
+    {
+      "pokeapi": "kangaskhan"
+    },
+    {
+      "pokeapi": "starmie"
+    },
+    {
+      "pokeapi": "pinsir"
+    },
+    {
+      "pokeapi": "tauros"
+    },
+    {
+      "pokeapi": "tauros-paldean-combat-breed"
+    },
+    {
+      "pokeapi": "tauros-paldean-blaze-breed"
+    },
+    {
+      "pokeapi": "tauros-paldean-aqua-breed"
+    },
+    {
+      "pokeapi": "gyarados"
+    },
+    {
+      "pokeapi": "ditto"
+    },
+    {
+      "pokeapi": "vaporeon"
+    },
+    {
+      "pokeapi": "jolteon"
+    },
+    {
+      "pokeapi": "flareon"
+    },
+    {
+      "pokeapi": "aerodactyl"
+    },
+    {
+      "pokeapi": "snorlax"
+    },
+    {
+      "pokeapi": "dragonite"
+    },
+    {
+      "pokeapi": "meganium"
+    },
+    {
+      "pokeapi": "typhlosion"
+    },
+    {
+      "pokeapi": "typhlosion-hisui"
+    },
+    {
+      "pokeapi": "feraligatr"
+    },
+    {
+      "pokeapi": "ariados"
+    },
+    {
+      "pokeapi": "ampharos"
+    },
+    {
+      "pokeapi": "azumarill"
+    },
+    {
+      "pokeapi": "politoed"
+    },
+    {
+      "pokeapi": "espeon"
+    },
+    {
+      "pokeapi": "umbreon"
+    },
+    {
+      "pokeapi": "slowking"
+    },
+    {
+      "pokeapi": "slowking-galar"
+    },
+    {
+      "pokeapi": "forretress"
+    },
+    {
+      "pokeapi": "steelix"
+    },
+    {
+      "pokeapi": "scizor"
+    },
+    {
+      "pokeapi": "heracross"
+    },
+    {
+      "pokeapi": "skarmory"
+    },
+    {
+      "pokeapi": "houndoom"
+    },
+    {
+      "pokeapi": "tyranitar"
+    },
+    {
+      "pokeapi": "pelipper"
+    },
+    {
+      "pokeapi": "gardevoir"
+    },
+    {
+      "pokeapi": "sableye"
+    },
+    {
+      "pokeapi": "aggron"
+    },
+    {
+      "pokeapi": "medicham"
+    },
+    {
+      "pokeapi": "manectric"
+    },
+    {
+      "pokeapi": "sharpedo"
+    },
+    {
+      "pokeapi": "camerupt"
+    },
+    {
+      "pokeapi": "torkoal"
+    },
+    {
+      "pokeapi": "altaria"
+    },
+    {
+      "pokeapi": "milotic"
+    },
+    {
+      "pokeapi": "castform"
+    },
+    {
+      "pokeapi": "banette"
+    },
+    {
+      "pokeapi": "chimecho"
+    },
+    {
+      "pokeapi": "absol"
+    },
+    {
+      "pokeapi": "glalie"
+    },
+    {
+      "pokeapi": "torterra"
+    },
+    {
+      "pokeapi": "infernape"
+    },
+    {
+      "pokeapi": "empoleon"
+    },
+    {
+      "pokeapi": "luxray"
+    },
+    {
+      "pokeapi": "roserade"
+    },
+    {
+      "pokeapi": "rampardos"
+    },
+    {
+      "pokeapi": "bastiodon"
+    },
+    {
+      "pokeapi": "lopunny"
+    },
+    {
+      "pokeapi": "spiritomb"
+    },
+    {
+      "pokeapi": "garchomp"
+    },
+    {
+      "pokeapi": "lucario"
+    },
+    {
+      "pokeapi": "hippowdon"
+    },
+    {
+      "pokeapi": "toxicroak"
+    },
+    {
+      "pokeapi": "abomasnow"
+    },
+    {
+      "pokeapi": "weavile"
+    },
+    {
+      "pokeapi": "rhyperior"
+    },
+    {
+      "pokeapi": "leafeon"
+    },
+    {
+      "pokeapi": "glaceon"
+    },
+    {
+      "pokeapi": "gliscor"
+    },
+    {
+      "pokeapi": "mamoswine"
+    },
+    {
+      "pokeapi": "gallade"
+    },
+    {
+      "pokeapi": "froslass"
+    },
+    {
+      "pokeapi": "rotom"
+    },
+    {
+      "pokeapi": "rotom-heat"
+    },
+    {
+      "pokeapi": "rotom-wash"
+    },
+    {
+      "pokeapi": "rotom-frost"
+    },
+    {
+      "pokeapi": "rotom-fan"
+    },
+    {
+      "pokeapi": "rotom-mow"
+    },
+    {
+      "pokeapi": "serperior"
+    },
+    {
+      "pokeapi": "emboar"
+    },
+    {
+      "pokeapi": "samurott"
+    },
+    {
+      "pokeapi": "samurott-hisui"
+    },
+    {
+      "pokeapi": "watchog"
+    },
+    {
+      "pokeapi": "liepard"
+    },
+    {
+      "pokeapi": "simisage"
+    },
+    {
+      "pokeapi": "simisear"
+    },
+    {
+      "pokeapi": "simipour"
+    },
+    {
+      "pokeapi": "excadrill"
+    },
+    {
+      "pokeapi": "audino"
+    },
+    {
+      "pokeapi": "conkeldurr"
+    },
+    {
+      "pokeapi": "whimsicott"
+    },
+    {
+      "pokeapi": "krookodile"
+    },
+    {
+      "pokeapi": "cofagrigus"
+    },
+    {
+      "pokeapi": "garbodor"
+    },
+    {
+      "pokeapi": "zoroark"
+    },
+    {
+      "pokeapi": "zoroark-hisui"
+    },
+    {
+      "pokeapi": "reuniclus"
+    },
+    {
+      "pokeapi": "vanilluxe"
+    },
+    {
+      "pokeapi": "emolga"
+    },
+    {
+      "pokeapi": "chandelure"
+    },
+    {
+      "pokeapi": "beartic"
+    },
+    {
+      "pokeapi": "stunfisk"
+    },
+    {
+      "pokeapi": "stunfisk-galar"
+    },
+    {
+      "pokeapi": "golurk"
+    },
+    {
+      "pokeapi": "hydreigon"
+    },
+    {
+      "pokeapi": "volcarona"
+    },
+    {
+      "pokeapi": "chesnaught"
+    },
+    {
+      "pokeapi": "delphox"
+    },
+    {
+      "pokeapi": "greninja"
+    },
+    {
+      "pokeapi": "diggersby"
+    },
+    {
+      "pokeapi": "talonflame"
+    },
+    {
+      "pokeapi": "vivillon-high-plains"
+    },
+    {
+      "pokeapi": "florges-red"
+    },
+    {
+      "pokeapi": "florges-yellow"
+    },
+    {
+      "pokeapi": "florges-orange"
+    },
+    {
+      "pokeapi": "florges-blue"
+    },
+    {
+      "pokeapi": "florges-white"
+    },
+    {
+      "pokeapi": "pangoro"
+    },
+    {
+      "pokeapi": "furfrou"
+    },
+    {
+      "pokeapi": "furfrou-matron-trim"
+    },
+    {
+      "pokeapi": "furfrou-dandy-trim"
+    },
+    {
+      "pokeapi": "meowstic-male"
+    },
+    {
+      "pokeapi": "meowstic-female"
+    },
+    {
+      "pokeapi": "aegislash"
+    },
+    {
+      "pokeapi": "aromatisse"
+    },
+    {
+      "pokeapi": "slurpuff"
+    },
+    {
+      "pokeapi": "clawitzer"
+    },
+    {
+      "pokeapi": "heliolisk"
+    },
+    {
+      "pokeapi": "tyrantrum"
+    },
+    {
+      "pokeapi": "aurorus"
+    },
+    {
+      "pokeapi": "sylveon"
+    },
+    {
+      "pokeapi": "hawlucha"
+    },
+    {
+      "pokeapi": "dedenne"
+    },
+    {
+      "pokeapi": "goodra"
+    },
+    {
+      "pokeapi": "goodra-hisui"
+    },
+    {
+      "pokeapi": "klefki"
+    },
+    {
+      "pokeapi": "trevenant"
+    },
+    {
+      "pokeapi": "gourgeist-average"
+    },
+    {
+      "pokeapi": "gourgeist-small"
+    },
+    {
+      "pokeapi": "gourgeist-large"
+    },
+    {
+      "pokeapi": "gourgeist-super"
+    },
+    {
+      "pokeapi": "avalugg"
+    },
+    {
+      "pokeapi": "avalugg-hisui"
+    },
+    {
+      "pokeapi": "noivern"
+    },
+    {
+      "pokeapi": "decidueye"
+    },
+    {
+      "pokeapi": "decidueye-hisui"
+    },
+    {
+      "pokeapi": "incineroar"
+    },
+    {
+      "pokeapi": "primarina"
+    },
+    {
+      "pokeapi": "toucannon"
+    },
+    {
+      "pokeapi": "crabominable"
+    },
+    {
+      "pokeapi": "lycanroc-midday"
+    },
+    {
+      "pokeapi": "lycanroc-midnight"
+    },
+    {
+      "pokeapi": "lycanroc-dusk"
+    },
+    {
+      "pokeapi": "toxapex"
+    },
+    {
+      "pokeapi": "mudsdale"
+    },
+    {
+      "pokeapi": "araquanid"
+    },
+    {
+      "pokeapi": "salazzle"
+    },
+    {
+      "pokeapi": "tsareena"
+    },
+    {
+      "pokeapi": "oranguru"
+    },
+    {
+      "pokeapi": "passimian"
+    },
+    {
+      "pokeapi": "mimikyu"
+    },
+    {
+      "pokeapi": "drampa"
+    },
+    {
+      "pokeapi": "kommo-o"
+    },
+    {
+      "pokeapi": "corviknight"
+    },
+    {
+      "pokeapi": "flapple"
+    },
+    {
+      "pokeapi": "appletun"
+    },
+    {
+      "pokeapi": "sandaconda"
+    },
+    {
+      "pokeapi": "polteageist-phony"
+    },
+    {
+      "pokeapi": "polteageist-antique"
+    },
+    {
+      "pokeapi": "hatterene"
+    },
+    {
+      "pokeapi": "mr-rime"
+    },
+    {
+      "pokeapi": "runerigus"
+    },
+    {
+      "pokeapi": "alcremie-vanilla-cream"
+    },
+    {
+      "pokeapi": "alcremie-ruby-cream"
+    },
+    {
+      "pokeapi": "alcremie-matcha-cream"
+    },
+    {
+      "pokeapi": "alcremie-mint-cream"
+    },
+    {
+      "pokeapi": "alcremie-lemon-cream"
+    },
+    {
+      "pokeapi": "alcremie-salted-cream"
+    },
+    {
+      "pokeapi": "alcremie-ruby-swirl"
+    },
+    {
+      "pokeapi": "alcremie-caramel-swirl"
+    },
+    {
+      "pokeapi": "alcremie-rainbow-swirl"
+    },
+    {
+      "pokeapi": "morpeko"
+    },
+    {
+      "pokeapi": "dragapult"
+    },
+    {
+      "pokeapi": "wyrdeer"
+    },
+    {
+      "pokeapi": "kleavor"
+    },
+    {
+      "pokeapi": "basculegion-male"
+    },
+    {
+      "pokeapi": "basculegion-female"
+    },
+    {
+      "pokeapi": "sneasler"
+    },
+    {
+      "pokeapi": "meowscarada"
+    },
+    {
+      "pokeapi": "skeledirge"
+    },
+    {
+      "pokeapi": "quaquaval"
+    },
+    {
+      "pokeapi": "maushold-family-of-three"
+    },
+    {
+      "pokeapi": "maushold-family-of-four"
+    },
+    {
+      "pokeapi": "garganacl"
+    },
+    {
+      "pokeapi": "armarouge"
+    },
+    {
+      "pokeapi": "ceruledge"
+    },
+    {
+      "pokeapi": "bellibolt"
+    },
+    {
+      "pokeapi": "scovillain"
+    },
+    {
+      "pokeapi": "espathra"
+    },
+    {
+      "pokeapi": "tinkaton"
+    },
+    {
+      "pokeapi": "palafin"
+    },
+    {
+      "pokeapi": "orthworm"
+    },
+    {
+      "pokeapi": "glimmora"
+    },
+    {
+      "pokeapi": "farigiraf"
+    },
+    {
+      "pokeapi": "kingambit"
+    },
+    {
+      "pokeapi": "sinistcha-unremarkable"
+    },
+    {
+      "pokeapi": "sinistcha-masterpiece"
+    },
+    {
+      "pokeapi": "archaludon"
+    },
+    {
+      "pokeapi": "hydrapple"
+    }
   ],
-  "roster_name": "Regular Roster M-B",
-  "regulation_set": "Regulation Set M-B",
-  "valid_until": "2026-09-02T01:59:00Z",
-  "count": 251,
-  "notes": "PokeAPI-compatible names for use with TeamBuilderScreen. Source: Bulbapedia Regular Roster M-B."
+  "reg_m_a_exclusive": [],
+  "reg_m_b_exclusive": [
+    {
+      "pokeapi": "vileplume"
+    },
+    {
+      "pokeapi": "qwilfish"
+    },
+    {
+      "pokeapi": "sceptile"
+    },
+    {
+      "pokeapi": "blaziken"
+    },
+    {
+      "pokeapi": "swampert"
+    },
+    {
+      "pokeapi": "mawile"
+    },
+    {
+      "pokeapi": "metagross"
+    },
+    {
+      "pokeapi": "staraptor"
+    },
+    {
+      "pokeapi": "musharna"
+    },
+    {
+      "pokeapi": "scolipede"
+    },
+    {
+      "pokeapi": "scrafty"
+    },
+    {
+      "pokeapi": "eelektross"
+    },
+    {
+      "pokeapi": "pyroar"
+    },
+    {
+      "pokeapi": "malamar"
+    },
+    {
+      "pokeapi": "barbaracle"
+    },
+    {
+      "pokeapi": "dragalge"
+    },
+    {
+      "pokeapi": "grimmsnarl"
+    },
+    {
+      "pokeapi": "falinks"
+    },
+    {
+      "pokeapi": "overqwil"
+    },
+    {
+      "pokeapi": "houndstone"
+    },
+    {
+      "pokeapi": "annihilape"
+    },
+    {
+      "pokeapi": "gholdengo"
+    }
+  ],
+  "all_legal": [
+    {
+      "pokeapi": "venusaur",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "charizard",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "blastoise",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "beedrill",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "pidgeot",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "arbok",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "pikachu",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "raichu",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "raichu-alolan",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "clefable",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "ninetales",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "ninetales-alolan",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "arcanine",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "arcanine-hisui",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "alakazam",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "machamp",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "victreebel",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "slowbro",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "slowbro-galar",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "gengar",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "kangaskhan",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "starmie",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "pinsir",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "tauros",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "tauros-paldean-combat-breed",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "tauros-paldean-blaze-breed",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "tauros-paldean-aqua-breed",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "gyarados",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "ditto",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "vaporeon",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "jolteon",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "flareon",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "aerodactyl",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "snorlax",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "dragonite",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "meganium",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "typhlosion",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "typhlosion-hisui",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "feraligatr",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "ariados",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "ampharos",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "azumarill",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "politoed",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "espeon",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "umbreon",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "slowking",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "slowking-galar",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "forretress",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "steelix",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "scizor",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "heracross",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "skarmory",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "houndoom",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "tyranitar",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "pelipper",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "gardevoir",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "sableye",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "aggron",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "medicham",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "manectric",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "sharpedo",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "camerupt",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "torkoal",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "altaria",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "milotic",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "castform",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "banette",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "chimecho",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "absol",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "glalie",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "torterra",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "infernape",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "empoleon",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "luxray",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "roserade",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "rampardos",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "bastiodon",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "lopunny",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "spiritomb",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "garchomp",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "lucario",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "hippowdon",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "toxicroak",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "abomasnow",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "weavile",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "rhyperior",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "leafeon",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "glaceon",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "gliscor",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "mamoswine",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "gallade",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "froslass",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "rotom",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "rotom-heat",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "rotom-wash",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "rotom-frost",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "rotom-fan",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "rotom-mow",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "serperior",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "emboar",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "samurott",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "samurott-hisui",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "watchog",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "liepard",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "simisage",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "simisear",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "simipour",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "excadrill",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "audino",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "conkeldurr",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "whimsicott",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "krookodile",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "cofagrigus",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "garbodor",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "zoroark",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "zoroark-hisui",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "reuniclus",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "vanilluxe",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "emolga",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "chandelure",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "beartic",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "stunfisk",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "stunfisk-galar",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "golurk",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "hydreigon",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "volcarona",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "chesnaught",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "delphox",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "greninja",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "diggersby",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "talonflame",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "vivillon-high-plains",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "florges-red",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "florges-yellow",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "florges-orange",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "florges-blue",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "florges-white",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "pangoro",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "furfrou",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "furfrou-matron-trim",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "furfrou-dandy-trim",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "meowstic-male",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "meowstic-female",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "aegislash",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "aromatisse",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "slurpuff",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "clawitzer",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "heliolisk",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "tyrantrum",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "aurorus",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "sylveon",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "hawlucha",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "dedenne",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "goodra",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "goodra-hisui",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "klefki",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "trevenant",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "gourgeist-average",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "gourgeist-small",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "gourgeist-large",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "gourgeist-super",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "avalugg",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "avalugg-hisui",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "noivern",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "decidueye",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "decidueye-hisui",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "incineroar",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "primarina",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "toucannon",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "crabominable",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "lycanroc-midday",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "lycanroc-midnight",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "lycanroc-dusk",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "toxapex",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "mudsdale",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "araquanid",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "salazzle",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "tsareena",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "oranguru",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "passimian",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "mimikyu",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "drampa",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "kommo-o",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "corviknight",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "flapple",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "appletun",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "sandaconda",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "polteageist-phony",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "polteageist-antique",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "hatterene",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "mr-rime",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "runerigus",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "alcremie-vanilla-cream",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "alcremie-ruby-cream",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "alcremie-matcha-cream",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "alcremie-mint-cream",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "alcremie-lemon-cream",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "alcremie-salted-cream",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "alcremie-ruby-swirl",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "alcremie-caramel-swirl",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "alcremie-rainbow-swirl",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "morpeko",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "dragapult",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "wyrdeer",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "kleavor",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "basculegion-male",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "basculegion-female",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "sneasler",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "meowscarada",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "skeledirge",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "quaquaval",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "maushold-family-of-three",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "maushold-family-of-four",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "garganacl",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "armarouge",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "ceruledge",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "bellibolt",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "scovillain",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "espathra",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "tinkaton",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "palafin",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "orthworm",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "glimmora",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "farigiraf",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "kingambit",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "sinistcha-unremarkable",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "sinistcha-masterpiece",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "archaludon",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "hydrapple",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "vileplume",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "qwilfish",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "sceptile",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "blaziken",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "swampert",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "mawile",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "metagross",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "staraptor",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "musharna",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "scolipede",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "scrafty",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "eelektross",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "pyroar",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "malamar",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "barbaracle",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "dragalge",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "grimmsnarl",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "falinks",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "overqwil",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "houndstone",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "annihilape",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "gholdengo",
+      "recruitable": true
+    },
+    {
+      "pokeapi": "floette-eternal-flower",
+      "recruitable": false
+    },
+    {
+      "pokeapi": "vivillon-archipelago",
+      "recruitable": false
+    },
+    {
+      "pokeapi": "vivillon-continental",
+      "recruitable": false
+    },
+    {
+      "pokeapi": "vivillon-elegant",
+      "recruitable": false
+    },
+    {
+      "pokeapi": "vivillon-garden",
+      "recruitable": false
+    },
+    {
+      "pokeapi": "vivillon-icy-snow",
+      "recruitable": false
+    },
+    {
+      "pokeapi": "vivillon-jungle",
+      "recruitable": false
+    },
+    {
+      "pokeapi": "vivillon-marine",
+      "recruitable": false
+    },
+    {
+      "pokeapi": "vivillon-meadow",
+      "recruitable": false
+    },
+    {
+      "pokeapi": "vivillon-modern",
+      "recruitable": false
+    },
+    {
+      "pokeapi": "vivillon-monsoon",
+      "recruitable": false
+    },
+    {
+      "pokeapi": "vivillon-ocean",
+      "recruitable": false
+    },
+    {
+      "pokeapi": "vivillon-polar",
+      "recruitable": false
+    },
+    {
+      "pokeapi": "vivillon-river",
+      "recruitable": false
+    },
+    {
+      "pokeapi": "vivillon-sandstorm",
+      "recruitable": false
+    },
+    {
+      "pokeapi": "vivillon-savanna",
+      "recruitable": false
+    },
+    {
+      "pokeapi": "vivillon-sun",
+      "recruitable": false
+    },
+    {
+      "pokeapi": "vivillon-tundra",
+      "recruitable": false
+    },
+    {
+      "pokeapi": "vivillon-fancy",
+      "recruitable": false
+    },
+    {
+      "pokeapi": "vivillon-poke-ball",
+      "recruitable": false
+    },
+    {
+      "pokeapi": "furfrou-star",
+      "recruitable": false
+    },
+    {
+      "pokeapi": "furfrou-diamond",
+      "recruitable": false
+    },
+    {
+      "pokeapi": "furfrou-debutante",
+      "recruitable": false
+    },
+    {
+      "pokeapi": "furfrou-la-reine",
+      "recruitable": false
+    },
+    {
+      "pokeapi": "furfrou-kabuki",
+      "recruitable": false
+    },
+    {
+      "pokeapi": "furfrou-pharaoh",
+      "recruitable": false
+    },
+    {
+      "pokeapi": "furfrou-heart",
+      "recruitable": false
+    }
+  ],
+  "non_recruitable_legal": [
+    {
+      "pokeapi": "floette-eternal-flower",
+      "recruitable": false
+    },
+    {
+      "pokeapi": "vivillon-archipelago",
+      "recruitable": false
+    },
+    {
+      "pokeapi": "vivillon-continental",
+      "recruitable": false
+    },
+    {
+      "pokeapi": "vivillon-elegant",
+      "recruitable": false
+    },
+    {
+      "pokeapi": "vivillon-garden",
+      "recruitable": false
+    },
+    {
+      "pokeapi": "vivillon-icy-snow",
+      "recruitable": false
+    },
+    {
+      "pokeapi": "vivillon-jungle",
+      "recruitable": false
+    },
+    {
+      "pokeapi": "vivillon-marine",
+      "recruitable": false
+    },
+    {
+      "pokeapi": "vivillon-meadow",
+      "recruitable": false
+    },
+    {
+      "pokeapi": "vivillon-modern",
+      "recruitable": false
+    },
+    {
+      "pokeapi": "vivillon-monsoon",
+      "recruitable": false
+    },
+    {
+      "pokeapi": "vivillon-ocean",
+      "recruitable": false
+    },
+    {
+      "pokeapi": "vivillon-polar",
+      "recruitable": false
+    },
+    {
+      "pokeapi": "vivillon-river",
+      "recruitable": false
+    },
+    {
+      "pokeapi": "vivillon-sandstorm",
+      "recruitable": false
+    },
+    {
+      "pokeapi": "vivillon-savanna",
+      "recruitable": false
+    },
+    {
+      "pokeapi": "vivillon-sun",
+      "recruitable": false
+    },
+    {
+      "pokeapi": "vivillon-tundra",
+      "recruitable": false
+    },
+    {
+      "pokeapi": "vivillon-fancy",
+      "recruitable": false
+    },
+    {
+      "pokeapi": "vivillon-poke-ball",
+      "recruitable": false
+    },
+    {
+      "pokeapi": "furfrou-star",
+      "recruitable": false
+    },
+    {
+      "pokeapi": "furfrou-diamond",
+      "recruitable": false
+    },
+    {
+      "pokeapi": "furfrou-debutante",
+      "recruitable": false
+    },
+    {
+      "pokeapi": "furfrou-la-reine",
+      "recruitable": false
+    },
+    {
+      "pokeapi": "furfrou-kabuki",
+      "recruitable": false
+    },
+    {
+      "pokeapi": "furfrou-pharaoh",
+      "recruitable": false
+    },
+    {
+      "pokeapi": "furfrou-heart",
+      "recruitable": false
+    }
+  ],
+  "metadata": {
+    "description": "Unified Pokémon Champions Regulation M-B legal roster, including recruitable Pokémon and legal but non-recruitable Pokémon/forms.",
+    "total_legal_entries": 278,
+    "recruitable_entries": 251,
+    "non_recruitable_entries": 27,
+    "pokeapi_endpoint": "https://pokeapi.co/api/v2/pokemon/{pokeapi}/",
+    "intended_use": "Use all_legal as the single roster-filter source."
+  }
 }

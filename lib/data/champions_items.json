@@ -1,157 +1,2270 @@
 {
-  "allowed_held_items": [
-    "abomasite",
-    "absolite",
-    "aerodactylite",
-    "alakazite",
-    "altarianite",
-    "ampharosite",
-    "aspear-berry",
-    "audinite",
-    "babiri-berry",
-    "banettite",
-    "barbaracite",
-    "beedrillite",
-    "big-root",
-    "black-belt",
-    "black-glasses",
-    "blastoisinite",
-    "blazikenite",
-    "bright-powder",
-    "cameruptite",
-    "chandelurite",
-    "charcoal",
-    "charizardite-x",
-    "charizardite-y",
-    "charti-berry",
-    "cheri-berry",
-    "chesnaughtite",
-    "chesto-berry",
-    "chilan-berry",
-    "chimechite",
-    "choice-scarf",
-    "chople-berry",
-    "clefablite",
-    "coba-berry",
-    "colbur-berry",
-    "crabominite",
-    "damp-rock",
-    "delphoxite",
-    "dragalgite",
-    "dragon-fang",
-    "dragoninite",
-    "drampanite",
-    "eelektrossite",
-    "emboarite",
-    "excadrite",
-    "expert-belt",
-    "fairy-feather",
-    "falinksite",
-    "feraligite",
-    "floettite",
-    "focus-band",
-    "focus-sash",
-    "froslassite",
-    "galladite",
-    "garchompite",
-    "gardevoirite",
-    "gengarite",
-    "glalitite",
-    "glimmoranite",
-    "golurkite",
-    "greninjite",
-    "gyaradosite",
-    "haban-berry",
-    "hard-stone",
-    "hawluchanite",
-    "heat-rock",
-    "heracronite",
-    "icy-rock",
-    "iron-ball",
-    "kangaskhanite",
-    "kasib-berry",
-    "kebia-berry",
-    "kings-rock",
-    "leftovers",
-    "leppa-berry",
-    "life-orb",
-    "light-ball",
-    "light-clay",
-    "lopunnite",
-    "lucarionite",
-    "lum-berry",
-    "magnet",
-    "malamarite",
-    "manectite",
-    "mawilite",
-    "medichamite",
-    "meganiumite",
-    "mental-herb",
-    "meowsticite",
-    "metagrossite",
-    "metal-coat",
-    "metronome",
-    "miracle-seed",
-    "muscle-band",
-    "mystic-water",
-    "never-melt-ice",
-    "occa-berry",
-    "oran-berry",
-    "passho-berry",
-    "payapa-berry",
-    "pecha-berry",
-    "persim-berry",
-    "pidgeotite",
-    "pinsirite",
-    "poison-barb",
-    "pyroarite",
-    "quick-claw",
-    "rawst-berry",
-    "rindo-berry",
-    "roseli-berry",
-    "sablenite",
-    "sceptilite",
-    "scizorite",
-    "scolipite",
-    "scope-lens",
-    "scovillainite",
-    "scraftinite",
-    "sharp-beak",
-    "sharpedonite",
-    "shed-shell",
-    "shell-bell",
-    "shuca-berry",
-    "silk-scarf",
-    "silver-powder",
-    "sitrus-berry",
-    "skarmorite",
-    "slowbronite",
-    "smooth-rock",
-    "soft-sand",
-    "spell-tag",
-    "staraptite",
-    "starminite",
-    "steelixite",
-    "swampertite",
-    "tanga-berry",
-    "twisted-spoon",
-    "tyranitarite",
-    "venusaurite",
-    "victreebelite",
-    "wacan-berry",
-    "white-herb",
-    "wide-lens",
-    "wise-glasses",
-    "yache-berry",
-    "zoom-lens"
-  ],
-  "game": "Pok\u00e9mon Champions",
-  "source": "Bulbapedia Shop (Champions) + List of items by index number in Pok\u00e9mon Champions",
-  "count": 144,
-  "notes": [
-    "PokeAPI-compatible names (lowercase, hyphenated).",
-    "Includes berries, type-boosters, competitive held items, and Mega Stones available in the Frontier Shop / game data.",
-    "Some items seen in trailers (e.g. Rocky Helmet, Black Sludge, Weakness Policy) were not available at release and are omitted.",
-    "Naming follows standard PokeAPI conventions (e.g. never-melt-ice, kings-rock, charizardite-x)."
-  ]
+  "schema_version": 2,
+  "engine_schema": {
+    "category": "functional grouping",
+    "trigger": "battle event that evaluates the item",
+    "condition": "requirements for activation",
+    "effect": "machine-readable effect payload",
+    "consumable": "whether item is removed after activation"
+  },
+  "source_item_count": 147,
+  "items": {
+    "abomasite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "absolite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "aerodactylite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "aggronite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "alakazite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "altarianite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "ampharosite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "aspear-berry": {
+      "category": [
+        "status_cure",
+        "berry"
+      ],
+      "trigger": [
+        "on_status"
+      ],
+      "condition": [
+        "status:freeze"
+      ],
+      "effect": {
+        "action": "cure_status"
+      },
+      "consumable": true
+    },
+    "audinite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "babiri-berry": {
+      "category": [
+        "defense",
+        "damage_reduction",
+        "berry"
+      ],
+      "trigger": [
+        "before_damage"
+      ],
+      "condition": [
+        "damage_type:steel",
+        "super_effective"
+      ],
+      "effect": {
+        "damage_multiplier": 0.5
+      },
+      "consumable": true
+    },
+    "banettite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "barbaracite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "beedrillite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "big-root": {
+      "category": [
+        "recovery",
+        "move_modifier"
+      ],
+      "trigger": [
+        "on_recovery"
+      ],
+      "condition": [],
+      "effect": {
+        "recovery_multiplier": 1.3
+      },
+      "consumable": false
+    },
+    "black-belt": {
+      "category": [
+        "damage_boost",
+        "type_boost"
+      ],
+      "trigger": [
+        "on_move_damage"
+      ],
+      "condition": [
+        "move_type:fighting"
+      ],
+      "effect": {
+        "power_multiplier": 1.2
+      },
+      "consumable": false
+    },
+    "black-glasses": {
+      "category": [
+        "damage_boost",
+        "type_boost"
+      ],
+      "trigger": [
+        "on_move_damage"
+      ],
+      "condition": [
+        "move_type:dark"
+      ],
+      "effect": {
+        "power_multiplier": 1.2
+      },
+      "consumable": false
+    },
+    "blastoisinite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "blazikenite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "bright-powder": {
+      "category": [
+        "evasion"
+      ],
+      "trigger": [
+        "on_incoming_move_accuracy"
+      ],
+      "condition": [],
+      "effect": {
+        "accuracy_multiplier": 0.9
+      },
+      "consumable": false
+    },
+    "cameruptite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "chandelurite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "charcoal": {
+      "category": [
+        "damage_boost",
+        "type_boost"
+      ],
+      "trigger": [
+        "on_move_damage"
+      ],
+      "condition": [
+        "move_type:fire"
+      ],
+      "effect": {
+        "power_multiplier": 1.2
+      },
+      "consumable": false
+    },
+    "charizardite-x": {
+      "category": [
+        "unmapped"
+      ],
+      "trigger": [
+        "manual_effect_definition_required"
+      ],
+      "condition": [],
+      "effect": {
+        "action": "define_from_game_data"
+      },
+      "consumable": false
+    },
+    "charizardite-y": {
+      "category": [
+        "unmapped"
+      ],
+      "trigger": [
+        "manual_effect_definition_required"
+      ],
+      "condition": [],
+      "effect": {
+        "action": "define_from_game_data"
+      },
+      "consumable": false
+    },
+    "charti-berry": {
+      "category": [
+        "defense",
+        "damage_reduction",
+        "berry"
+      ],
+      "trigger": [
+        "before_damage"
+      ],
+      "condition": [
+        "damage_type:rock",
+        "super_effective"
+      ],
+      "effect": {
+        "damage_multiplier": 0.5
+      },
+      "consumable": true
+    },
+    "cheri-berry": {
+      "category": [
+        "status_cure",
+        "berry"
+      ],
+      "trigger": [
+        "on_status"
+      ],
+      "condition": [
+        "status:paralysis"
+      ],
+      "effect": {
+        "action": "cure_status"
+      },
+      "consumable": true
+    },
+    "chesnaughtite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "chesto-berry": {
+      "category": [
+        "status_cure",
+        "berry"
+      ],
+      "trigger": [
+        "on_status"
+      ],
+      "condition": [
+        "status:sleep"
+      ],
+      "effect": {
+        "action": "cure_status"
+      },
+      "consumable": true
+    },
+    "chilan-berry": {
+      "category": [
+        "defense",
+        "damage_reduction",
+        "berry"
+      ],
+      "trigger": [
+        "before_damage"
+      ],
+      "condition": [
+        "damage_type:normal",
+        "damage_type_match"
+      ],
+      "effect": {
+        "damage_multiplier": 0.5
+      },
+      "consumable": true
+    },
+    "chimechite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "choice-scarf": {
+      "category": [
+        "stat_boost",
+        "speed",
+        "move_restriction"
+      ],
+      "trigger": [
+        "on_battle_start",
+        "on_move_use"
+      ],
+      "condition": [
+        "first_move_locks_choice"
+      ],
+      "effect": {
+        "speed_multiplier": 1.5,
+        "lock_move": true
+      },
+      "consumable": false
+    },
+    "chople-berry": {
+      "category": [
+        "defense",
+        "damage_reduction",
+        "berry"
+      ],
+      "trigger": [
+        "before_damage"
+      ],
+      "condition": [
+        "damage_type:fighting",
+        "super_effective"
+      ],
+      "effect": {
+        "damage_multiplier": 0.5
+      },
+      "consumable": true
+    },
+    "clefablite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "coba-berry": {
+      "category": [
+        "defense",
+        "damage_reduction",
+        "berry"
+      ],
+      "trigger": [
+        "before_damage"
+      ],
+      "condition": [
+        "damage_type:flying",
+        "super_effective"
+      ],
+      "effect": {
+        "damage_multiplier": 0.5
+      },
+      "consumable": true
+    },
+    "colbur-berry": {
+      "category": [
+        "defense",
+        "damage_reduction",
+        "berry"
+      ],
+      "trigger": [
+        "before_damage"
+      ],
+      "condition": [
+        "damage_type:dark",
+        "super_effective"
+      ],
+      "effect": {
+        "damage_multiplier": 0.5
+      },
+      "consumable": true
+    },
+    "crabominite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "damp-rock": {
+      "category": [
+        "unmapped"
+      ],
+      "trigger": [
+        "manual_effect_definition_required"
+      ],
+      "condition": [],
+      "effect": {
+        "action": "define_from_game_data"
+      },
+      "consumable": false
+    },
+    "delphoxite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "dragalgite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "dragon-fang": {
+      "category": [
+        "damage_boost",
+        "type_boost"
+      ],
+      "trigger": [
+        "on_move_damage"
+      ],
+      "condition": [
+        "move_type:dragon"
+      ],
+      "effect": {
+        "power_multiplier": 1.2
+      },
+      "consumable": false
+    },
+    "dragoninite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "drampanite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "eelektrossite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "emboarite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "excadrite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "expert-belt": {
+      "category": [
+        "damage_boost"
+      ],
+      "trigger": [
+        "on_move_damage"
+      ],
+      "condition": [
+        "super_effective"
+      ],
+      "effect": {
+        "power_multiplier": 1.2
+      },
+      "consumable": false
+    },
+    "fairy-feather": {
+      "category": [
+        "damage_boost",
+        "type_boost"
+      ],
+      "trigger": [
+        "on_move_damage"
+      ],
+      "condition": [
+        "move_type:fairy"
+      ],
+      "effect": {
+        "power_multiplier": 1.2
+      },
+      "consumable": false
+    },
+    "falinksite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "feraligite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "floettite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "focus-band": {
+      "category": [
+        "survivability"
+      ],
+      "trigger": [
+        "on_fatal_damage"
+      ],
+      "condition": [
+        "random_chance"
+      ],
+      "effect": {
+        "survive_with_hp": 1,
+        "chance": 0.1
+      },
+      "consumable": false
+    },
+    "focus-sash": {
+      "category": [
+        "survivability"
+      ],
+      "trigger": [
+        "on_fatal_damage"
+      ],
+      "condition": [
+        "full_hp"
+      ],
+      "effect": {
+        "survive_with_hp": 1
+      },
+      "consumable": true
+    },
+    "froslassite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "galladite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "garchompite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "gardevoirite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "gengarite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "glalitite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "glimmoranite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "golurkite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "greninjite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "gyaradosite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "haban-berry": {
+      "category": [
+        "defense",
+        "damage_reduction",
+        "berry"
+      ],
+      "trigger": [
+        "before_damage"
+      ],
+      "condition": [
+        "damage_type:dragon",
+        "super_effective"
+      ],
+      "effect": {
+        "damage_multiplier": 0.5
+      },
+      "consumable": true
+    },
+    "hard-stone": {
+      "category": [
+        "damage_boost",
+        "type_boost"
+      ],
+      "trigger": [
+        "on_move_damage"
+      ],
+      "condition": [
+        "move_type:rock"
+      ],
+      "effect": {
+        "power_multiplier": 1.2
+      },
+      "consumable": false
+    },
+    "hawluchanite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "heat-rock": {
+      "category": [
+        "unmapped"
+      ],
+      "trigger": [
+        "manual_effect_definition_required"
+      ],
+      "condition": [],
+      "effect": {
+        "action": "define_from_game_data"
+      },
+      "consumable": false
+    },
+    "heracronite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "houndoominite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "icy-rock": {
+      "category": [
+        "unmapped"
+      ],
+      "trigger": [
+        "manual_effect_definition_required"
+      ],
+      "condition": [],
+      "effect": {
+        "action": "define_from_game_data"
+      },
+      "consumable": false
+    },
+    "iron-ball": {
+      "category": [
+        "speed",
+        "field_modifier"
+      ],
+      "trigger": [
+        "on_battle_start"
+      ],
+      "condition": [],
+      "effect": {
+        "speed_multiplier": 0.5,
+        "grounded": true
+      },
+      "consumable": false
+    },
+    "kangaskhanite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "kasib-berry": {
+      "category": [
+        "unmapped"
+      ],
+      "trigger": [
+        "manual_effect_definition_required"
+      ],
+      "condition": [],
+      "effect": {
+        "action": "define_from_game_data"
+      },
+      "consumable": false
+    },
+    "kebia-berry": {
+      "category": [
+        "defense",
+        "damage_reduction",
+        "berry"
+      ],
+      "trigger": [
+        "before_damage"
+      ],
+      "condition": [
+        "damage_type:poison",
+        "super_effective"
+      ],
+      "effect": {
+        "damage_multiplier": 0.5
+      },
+      "consumable": true
+    },
+    "kings-rock": {
+      "category": [
+        "unmapped"
+      ],
+      "trigger": [
+        "manual_effect_definition_required"
+      ],
+      "condition": [],
+      "effect": {
+        "action": "define_from_game_data"
+      },
+      "consumable": false
+    },
+    "leftovers": {
+      "category": [
+        "recovery"
+      ],
+      "trigger": [
+        "end_of_turn"
+      ],
+      "condition": [],
+      "effect": {
+        "resource": "hp",
+        "amount": "1/16_max_hp",
+        "repeat": "end_of_turn"
+      },
+      "consumable": false
+    },
+    "leppa-berry": {
+      "category": [
+        "recovery",
+        "berry"
+      ],
+      "trigger": [
+        "on_move_use"
+      ],
+      "condition": [],
+      "effect": {
+        "resource": "pp",
+        "amount": "restore_one_move_pp"
+      },
+      "consumable": true
+    },
+    "life-orb": {
+      "category": [
+        "damage_boost",
+        "recoil"
+      ],
+      "trigger": [
+        "on_move_damage",
+        "after_damage"
+      ],
+      "condition": [],
+      "effect": {
+        "power_multiplier": 1.3,
+        "recoil": "1/10_max_hp"
+      },
+      "consumable": false
+    },
+    "light-ball": {
+      "category": [
+        "unmapped"
+      ],
+      "trigger": [
+        "manual_effect_definition_required"
+      ],
+      "condition": [],
+      "effect": {
+        "action": "define_from_game_data"
+      },
+      "consumable": false
+    },
+    "light-clay": {
+      "category": [
+        "effect_extension"
+      ],
+      "trigger": [
+        "on_effect_start"
+      ],
+      "condition": [
+        "screen_effect"
+      ],
+      "effect": {
+        "duration_bonus_turns": 3
+      },
+      "consumable": false
+    },
+    "lopunnite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "lucarionite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "lum-berry": {
+      "category": [
+        "status_cure",
+        "berry"
+      ],
+      "trigger": [
+        "on_status"
+      ],
+      "condition": [
+        "status:major_status"
+      ],
+      "effect": {
+        "action": "cure_status"
+      },
+      "consumable": true
+    },
+    "magnet": {
+      "category": [
+        "damage_boost",
+        "type_boost"
+      ],
+      "trigger": [
+        "on_move_damage"
+      ],
+      "condition": [
+        "move_type:electric"
+      ],
+      "effect": {
+        "power_multiplier": 1.2
+      },
+      "consumable": false
+    },
+    "malamarite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "manectite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "mawilite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "medichamite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "meganiumite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "mental-herb": {
+      "category": [
+        "status_cure",
+        "berry_like"
+      ],
+      "trigger": [
+        "on_status"
+      ],
+      "condition": [
+        "infatuation"
+      ],
+      "effect": {
+        "action": "cure_status"
+      },
+      "consumable": true
+    },
+    "meowsticite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "metagrossite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "metal-coat": {
+      "category": [
+        "damage_boost",
+        "type_boost"
+      ],
+      "trigger": [
+        "on_move_damage"
+      ],
+      "condition": [
+        "move_type:steel"
+      ],
+      "effect": {
+        "power_multiplier": 1.2
+      },
+      "consumable": false
+    },
+    "metronome": {
+      "category": [
+        "damage_boost",
+        "move_modifier"
+      ],
+      "trigger": [
+        "on_move_damage"
+      ],
+      "condition": [
+        "same_move_as_previous_turn"
+      ],
+      "effect": {
+        "power_step": "incremental"
+      },
+      "consumable": false
+    },
+    "miracle-seed": {
+      "category": [
+        "damage_boost",
+        "type_boost"
+      ],
+      "trigger": [
+        "on_move_damage"
+      ],
+      "condition": [
+        "move_type:grass"
+      ],
+      "effect": {
+        "power_multiplier": 1.2
+      },
+      "consumable": false
+    },
+    "muscle-band": {
+      "category": [
+        "unmapped"
+      ],
+      "trigger": [
+        "manual_effect_definition_required"
+      ],
+      "condition": [],
+      "effect": {
+        "action": "define_from_game_data"
+      },
+      "consumable": false
+    },
+    "mystic-water": {
+      "category": [
+        "damage_boost",
+        "type_boost"
+      ],
+      "trigger": [
+        "on_move_damage"
+      ],
+      "condition": [
+        "move_type:water"
+      ],
+      "effect": {
+        "power_multiplier": 1.2
+      },
+      "consumable": false
+    },
+    "never-melt-ice": {
+      "category": [
+        "damage_boost",
+        "type_boost"
+      ],
+      "trigger": [
+        "on_move_damage"
+      ],
+      "condition": [
+        "move_type:ice"
+      ],
+      "effect": {
+        "power_multiplier": 1.2
+      },
+      "consumable": false
+    },
+    "occa-berry": {
+      "category": [
+        "defense",
+        "damage_reduction",
+        "berry"
+      ],
+      "trigger": [
+        "before_damage"
+      ],
+      "condition": [
+        "damage_type:fire",
+        "super_effective"
+      ],
+      "effect": {
+        "damage_multiplier": 0.5
+      },
+      "consumable": true
+    },
+    "oran-berry": {
+      "category": [
+        "recovery",
+        "berry"
+      ],
+      "trigger": [
+        "on_hp_threshold"
+      ],
+      "condition": [
+        "hp_at_or_below_50_percent"
+      ],
+      "effect": {
+        "resource": "hp",
+        "amount": "10_flat"
+      },
+      "consumable": true
+    },
+    "passho-berry": {
+      "category": [
+        "defense",
+        "damage_reduction",
+        "berry"
+      ],
+      "trigger": [
+        "before_damage"
+      ],
+      "condition": [
+        "damage_type:water",
+        "super_effective"
+      ],
+      "effect": {
+        "damage_multiplier": 0.5
+      },
+      "consumable": true
+    },
+    "payapa-berry": {
+      "category": [
+        "defense",
+        "damage_reduction",
+        "berry"
+      ],
+      "trigger": [
+        "before_damage"
+      ],
+      "condition": [
+        "damage_type:psychic",
+        "super_effective"
+      ],
+      "effect": {
+        "damage_multiplier": 0.5
+      },
+      "consumable": true
+    },
+    "pecha-berry": {
+      "category": [
+        "status_cure",
+        "berry"
+      ],
+      "trigger": [
+        "on_status"
+      ],
+      "condition": [
+        "status:poison"
+      ],
+      "effect": {
+        "action": "cure_status"
+      },
+      "consumable": true
+    },
+    "persim-berry": {
+      "category": [
+        "status_cure",
+        "berry"
+      ],
+      "trigger": [
+        "on_status"
+      ],
+      "condition": [
+        "status:confusion"
+      ],
+      "effect": {
+        "action": "cure_status"
+      },
+      "consumable": true
+    },
+    "pidgeotite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "pinsirite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "poison-barb": {
+      "category": [
+        "damage_boost",
+        "type_boost"
+      ],
+      "trigger": [
+        "on_move_damage"
+      ],
+      "condition": [
+        "move_type:poison"
+      ],
+      "effect": {
+        "power_multiplier": 1.2
+      },
+      "consumable": false
+    },
+    "pyroarite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "quick-claw": {
+      "category": [
+        "speed",
+        "priority"
+      ],
+      "trigger": [
+        "on_turn_order"
+      ],
+      "condition": [
+        "random_chance"
+      ],
+      "effect": {
+        "priority_bonus": 1
+      },
+      "consumable": false
+    },
+    "raichunite-x": {
+      "category": [
+        "unmapped"
+      ],
+      "trigger": [
+        "manual_effect_definition_required"
+      ],
+      "condition": [],
+      "effect": {
+        "action": "define_from_game_data"
+      },
+      "consumable": false
+    },
+    "raichunite-y": {
+      "category": [
+        "unmapped"
+      ],
+      "trigger": [
+        "manual_effect_definition_required"
+      ],
+      "condition": [],
+      "effect": {
+        "action": "define_from_game_data"
+      },
+      "consumable": false
+    },
+    "rawst-berry": {
+      "category": [
+        "status_cure",
+        "berry"
+      ],
+      "trigger": [
+        "on_status"
+      ],
+      "condition": [
+        "status:burn"
+      ],
+      "effect": {
+        "action": "cure_status"
+      },
+      "consumable": true
+    },
+    "rindo-berry": {
+      "category": [
+        "defense",
+        "damage_reduction",
+        "berry"
+      ],
+      "trigger": [
+        "before_damage"
+      ],
+      "condition": [
+        "damage_type:grass",
+        "super_effective"
+      ],
+      "effect": {
+        "damage_multiplier": 0.5
+      },
+      "consumable": true
+    },
+    "roseli-berry": {
+      "category": [
+        "defense",
+        "damage_reduction",
+        "berry"
+      ],
+      "trigger": [
+        "before_damage"
+      ],
+      "condition": [
+        "damage_type:fairy",
+        "super_effective"
+      ],
+      "effect": {
+        "damage_multiplier": 0.5
+      },
+      "consumable": true
+    },
+    "sablenite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "sceptilite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "scizorite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "scolipite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "scope-lens": {
+      "category": [
+        "critical_hit"
+      ],
+      "trigger": [
+        "on_move_damage"
+      ],
+      "condition": [],
+      "effect": {
+        "critical_stage_bonus": 1
+      },
+      "consumable": false
+    },
+    "scovillainite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "scraftinite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "sharp-beak": {
+      "category": [
+        "damage_boost",
+        "type_boost"
+      ],
+      "trigger": [
+        "on_move_damage"
+      ],
+      "condition": [
+        "move_type:flying"
+      ],
+      "effect": {
+        "power_multiplier": 1.2
+      },
+      "consumable": false
+    },
+    "sharpedonite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "shed-shell": {
+      "category": [
+        "unmapped"
+      ],
+      "trigger": [
+        "manual_effect_definition_required"
+      ],
+      "condition": [],
+      "effect": {
+        "action": "define_from_game_data"
+      },
+      "consumable": false
+    },
+    "shell-bell": {
+      "category": [
+        "unmapped"
+      ],
+      "trigger": [
+        "manual_effect_definition_required"
+      ],
+      "condition": [],
+      "effect": {
+        "action": "define_from_game_data"
+      },
+      "consumable": false
+    },
+    "shuca-berry": {
+      "category": [
+        "defense",
+        "damage_reduction",
+        "berry"
+      ],
+      "trigger": [
+        "before_damage"
+      ],
+      "condition": [
+        "damage_type:ground",
+        "super_effective"
+      ],
+      "effect": {
+        "damage_multiplier": 0.5
+      },
+      "consumable": true
+    },
+    "silk-scarf": {
+      "category": [
+        "damage_boost",
+        "type_boost"
+      ],
+      "trigger": [
+        "on_move_damage"
+      ],
+      "condition": [
+        "move_type:normal"
+      ],
+      "effect": {
+        "power_multiplier": 1.2
+      },
+      "consumable": false
+    },
+    "silver-powder": {
+      "category": [
+        "damage_boost",
+        "type_boost"
+      ],
+      "trigger": [
+        "on_move_damage"
+      ],
+      "condition": [
+        "move_type:bug"
+      ],
+      "effect": {
+        "power_multiplier": 1.2
+      },
+      "consumable": false
+    },
+    "sitrus-berry": {
+      "category": [
+        "recovery",
+        "berry"
+      ],
+      "trigger": [
+        "on_hp_threshold"
+      ],
+      "condition": [
+        "hp_at_or_below_50_percent"
+      ],
+      "effect": {
+        "resource": "hp",
+        "amount": "25_percent_max_hp"
+      },
+      "consumable": true
+    },
+    "skarmorite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "slowbronite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "smooth-rock": {
+      "category": [
+        "unmapped"
+      ],
+      "trigger": [
+        "manual_effect_definition_required"
+      ],
+      "condition": [],
+      "effect": {
+        "action": "define_from_game_data"
+      },
+      "consumable": false
+    },
+    "soft-sand": {
+      "category": [
+        "damage_boost",
+        "type_boost"
+      ],
+      "trigger": [
+        "on_move_damage"
+      ],
+      "condition": [
+        "move_type:ground"
+      ],
+      "effect": {
+        "power_multiplier": 1.2
+      },
+      "consumable": false
+    },
+    "spell-tag": {
+      "category": [
+        "damage_boost",
+        "type_boost"
+      ],
+      "trigger": [
+        "on_move_damage"
+      ],
+      "condition": [
+        "move_type:ghost"
+      ],
+      "effect": {
+        "power_multiplier": 1.2
+      },
+      "consumable": false
+    },
+    "staraptite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "starminite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "steelixite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "swampertite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "tanga-berry": {
+      "category": [
+        "defense",
+        "damage_reduction",
+        "berry"
+      ],
+      "trigger": [
+        "before_damage"
+      ],
+      "condition": [
+        "damage_type:bug",
+        "super_effective"
+      ],
+      "effect": {
+        "damage_multiplier": 0.5
+      },
+      "consumable": true
+    },
+    "twisted-spoon": {
+      "category": [
+        "damage_boost",
+        "type_boost"
+      ],
+      "trigger": [
+        "on_move_damage"
+      ],
+      "condition": [
+        "move_type:psychic"
+      ],
+      "effect": {
+        "power_multiplier": 1.2
+      },
+      "consumable": false
+    },
+    "tyranitarite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "venusaurite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "victreebelite": {
+      "category": [
+        "mega_stone"
+      ],
+      "trigger": [
+        "on_mega_evolution"
+      ],
+      "condition": [
+        "held_by_compatible_pokemon"
+      ],
+      "effect": {
+        "action": "mega_evolve"
+      },
+      "consumable": false
+    },
+    "wacan-berry": {
+      "category": [
+        "defense",
+        "damage_reduction",
+        "berry"
+      ],
+      "trigger": [
+        "before_damage"
+      ],
+      "condition": [
+        "damage_type:electric",
+        "super_effective"
+      ],
+      "effect": {
+        "damage_multiplier": 0.5
+      },
+      "consumable": true
+    },
+    "white-herb": {
+      "category": [
+        "stat_restoration"
+      ],
+      "trigger": [
+        "on_stat_change"
+      ],
+      "condition": [
+        "any_stat_lowered"
+      ],
+      "effect": {
+        "action": "restore_stats"
+      },
+      "consumable": true
+    },
+    "wide-lens": {
+      "category": [
+        "accuracy"
+      ],
+      "trigger": [
+        "on_move_accuracy"
+      ],
+      "condition": [],
+      "effect": {
+        "accuracy_multiplier": 1.1
+      },
+      "consumable": false
+    },
+    "wise-glasses": {
+      "category": [
+        "unmapped"
+      ],
+      "trigger": [
+        "manual_effect_definition_required"
+      ],
+      "condition": [],
+      "effect": {
+        "action": "define_from_game_data"
+      },
+      "consumable": false
+    },
+    "yache-berry": {
+      "category": [
+        "defense",
+        "damage_reduction",
+        "berry"
+      ],
+      "trigger": [
+        "before_damage"
+      ],
+      "condition": [
+        "damage_type:ice",
+        "super_effective"
+      ],
+      "effect": {
+        "damage_multiplier": 0.5
+      },
+      "consumable": true
+    }
+  }
 }
