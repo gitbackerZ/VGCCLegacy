@@ -7,6 +7,7 @@ import '../services/stat_calculator.dart';
 import '../services/team_text_codec.dart';
 import '../data/natures.dart';
 import '../models/team_member.dart';
+import '../models/pokemon_details.dart';
 import '../theme/adaptive_field_theme.dart';
 import '../widgets/team_builder/team_card.dart';
 import '../widgets/team_builder/pokemon_search_list.dart';
@@ -543,6 +544,7 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
     if (heldItem.isEmpty) return false;
     final item = heldItem.toLowerCase().trim();
 
+    // Guard against non-Mega item ending in 'ite'
     if (item == 'eviolite') return false;
 
     if (formKey.contains('-mega-x')) {
@@ -558,14 +560,18 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
     }
   }
 
-  Future<MapEntry<String, Map<String, int>>?> _resolveActiveMega(TeamMember member) async {
+  /// Resolves the active Mega form (if any) purely from held item, using
+  /// the game-rule string match in [_isValidMegaItem]. Mega form details
+  /// (stats/ability/types/height/weight) come from the service's cached
+  /// pipeline — same as any base form, no extra item-lookup query needed.
+  Future<MapEntry<String, PokemonDetails>?> _resolveActiveMega(TeamMember member) async {
     final heldItem = (member.heldItem ?? '').toLowerCase().trim();
     if (heldItem.isEmpty) return null;
 
-    final allMegaStats = await _service.getAllMegaBaseStats(member.name);
-    if (allMegaStats.isEmpty) return null;
+    final allMegaDetails = await _service.getAllMegaFormDetails(member.name);
+    if (allMegaDetails.isEmpty) return null;
 
-    for (final entry in allMegaStats.entries) {
+    for (final entry in allMegaDetails.entries) {
       if (_isValidMegaItem(heldItem, entry.key)) {
         return MapEntry(entry.key, entry.value);
       }
@@ -594,18 +600,16 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
       final activeMega = await _resolveActiveMega(member);
       if (activeMega != null) {
         megaFormName = activeMega.key;
+        final megaDetails = activeMega.value;
         megaStats = StatCalculator.calculate(
-          baseStats: activeMega.value,
+          baseStats: megaDetails.baseStats,
           evs: member.evs,
           natureBoosted: nature.boosted ?? '',
           natureLowered: nature.lowered ?? '',
         );
-        try {
-          final abilities = await _service.getAbilitiesForPokemon(megaFormName);
-          if (abilities.isNotEmpty) {
-            megaAbility = abilities.first['name'] as String;
-          }
-        } catch (_) {}
+        if (megaDetails.abilities.isNotEmpty) {
+          megaAbility = megaDetails.abilities.first['name'] as String;
+        }
       }
 
       if (!mounted) return;
@@ -627,16 +631,31 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
   }
 
   /// Shows the full species info dialog (types, gender rate, height, weight,
-  /// abilities, move learn set). Details are fetched via [PokeApiService],
-  /// which transparently checks its local cache before hitting PokeAPI —
-  /// so repeat lookups for the same Pokémon are near-instant.
+  /// abilities, move learn set), including a Mega Evolution section if the
+  /// held item currently triggers one. Everything routes through the
+  /// service's cached pipeline, so repeat lookups — and any lookup once the
+  /// Pokémon has been seen before — work fully offline.
   Future<void> _showPokemonInfo(int index) async {
     _unfocus();
     final member = _team[index];
     try {
       final details = await _service.getPokemonDetails(member.name);
+
+      String? megaFormName;
+      PokemonDetails? megaDetails;
+      final activeMega = await _resolveActiveMega(member);
+      if (activeMega != null) {
+        megaFormName = activeMega.key;
+        megaDetails = activeMega.value;
+      }
+
       if (!mounted) return;
-      await showPokemonInfoDialog(context, details);
+      await showPokemonInfoDialog(
+        context,
+        details,
+        megaDetails: megaDetails,
+        megaFormName: megaFormName,
+      );
     } catch (e) {
       _announce('Could not load info for ${member.name}.');
     } finally {
@@ -674,18 +693,16 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
         final activeMega = await _resolveActiveMega(member);
         if (activeMega != null) {
           megaFormNameByIndex[i] = activeMega.key;
+          final megaDetails = activeMega.value;
           megaStatsByIndex[i] = StatCalculator.calculate(
-            baseStats: activeMega.value,
+            baseStats: megaDetails.baseStats,
             evs: member.evs,
             natureBoosted: nature.boosted ?? '',
             natureLowered: nature.lowered ?? '',
           );
-          try {
-            final abilities = await _service.getAbilitiesForPokemon(activeMega.key);
-            if (abilities.isNotEmpty) {
-              megaAbilityByIndex[i] = abilities.first['name'] as String;
-            }
-          } catch (_) {}
+          if (megaDetails.abilities.isNotEmpty) {
+            megaAbilityByIndex[i] = megaDetails.abilities.first['name'] as String;
+          }
         }
       } catch (_) {
         // Skip stats for this member if fetch fails; export continues without them.
