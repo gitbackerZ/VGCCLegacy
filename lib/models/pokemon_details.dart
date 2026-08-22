@@ -1,36 +1,10 @@
-/// A single move-learn entry: which move, how it's learned, and at what
-/// level (for level-up moves only).
-class LearnableMove {
-  final String name;
-  final String learnMethod; // e.g. 'level-up', 'machine', 'egg', 'tutor'
-  final int? levelLearnedAt;
-
-  LearnableMove({
-    required this.name,
-    required this.learnMethod,
-    this.levelLearnedAt,
-  });
-
-  Map<String, dynamic> toJson() => {
-        'name': name,
-        'learnMethod': learnMethod,
-        'levelLearnedAt': levelLearnedAt,
-      };
-
-  factory LearnableMove.fromJson(Map<String, dynamic> json) => LearnableMove(
-        name: json['name'] as String,
-        learnMethod: json['learnMethod'] as String,
-        levelLearnedAt: json['levelLearnedAt'] as int?,
-      );
-
-  @override
-  String toString() =>
-      '$name ($learnMethod${levelLearnedAt != null && levelLearnedAt! > 0 ? ", lvl $levelLearnedAt" : ""})';
-}
-
-/// Full detail bundle for a Pokémon/form, matching the requested table:
-/// name, gender_rate, types, base_stats, abilities, height, weight,
-/// move_learn_set.
+/// Full detail bundle for a Pokémon/form, matching: name, gender_rate,
+/// types, base_stats, abilities, height, weight, move_learn_set.
+///
+/// move_learn_set is a flattened, all-generation list of move names (not
+/// scoped to any particular version group) — matching how PokeAPI's raw
+/// `moves` list is naturally deduplicated (one entry per move regardless of
+/// how many games it's learnable in).
 class PokemonDetails {
   final String name;
   final int genderRate;
@@ -39,7 +13,7 @@ class PokemonDetails {
   final List<Map<String, dynamic>> abilities; // {name, isHidden}
   final double heightMeters;
   final double weightKilograms;
-  final List<LearnableMove> moveLearnSet;
+  final List<String> moveLearnSet;
 
   PokemonDetails({
     required this.name,
@@ -60,7 +34,7 @@ class PokemonDetails {
         'abilities': abilities,
         'heightMeters': heightMeters,
         'weightKilograms': weightKilograms,
-        'moveLearnSet': moveLearnSet.map((m) => m.toJson()).toList(),
+        'moveLearnSet': moveLearnSet,
       };
 
   factory PokemonDetails.fromJson(Map<String, dynamic> json) => PokemonDetails(
@@ -73,8 +47,6 @@ class PokemonDetails {
             .toList(),
         heightMeters: (json['heightMeters'] as num).toDouble(),
         weightKilograms: (json['weightKilograms'] as num).toDouble(),
-        moveLearnSet: (json['moveLearnSet'] as List)
-            .map((m) => LearnableMove.fromJson(Map<String, dynamic>.from(m as Map)))
-            .toList(),
+        moveLearnSet: List<String>.from(json['moveLearnSet'] as List),
       );
 }
