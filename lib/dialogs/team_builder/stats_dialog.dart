@@ -2,9 +2,6 @@ import 'package:flutter/material.dart';
 import '../../data/natures.dart';
 import '../../theme/adaptive_field_theme.dart';
 
-/// Pure presentation dialog: the screen computes normal/mega stats up front
-/// (it owns the PokeApiService + StatCalculator calls) and passes the
-/// results in here.
 Future<void> showStatsDialog(
   BuildContext context, {
   required String memberName,
@@ -31,8 +28,9 @@ Future<void> showStatsDialog(
           (e.key == 'Spe' && nature.lowered == 'Speed');
       final suffix = isBoosted ? ' (+)' : (isLowered ? ' (-)' : '');
       return Semantics(
-        label: '${e.key}: ${e.value}${isBoosted ? ", boosted" : ""}${isLowered ? ", lowered" : ""}',
-        child: Text('${e.key}: ${e.value}$suffix'),
+        label:
+            '${e.key}: ${e.value}${isBoosted ? ", boosted" : ""}${isLowered ? ", lowered" : ""}',
+        child: ExcludeSemantics(child: Text('${e.key}: ${e.value}$suffix')),
       );
     }).toList();
   }
@@ -75,10 +73,12 @@ Future<void> showStatsDialog(
         Semantics(
           button: true,
           label: 'Close stats dialog for $memberName',
-          child: FilledButton(
-            style: AdaptiveFieldTheme.filledButtonStyle(context),
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
+          child: ExcludeSemantics(
+            child: FilledButton(
+              style: AdaptiveFieldTheme.filledButtonStyle(context),
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Close'),
+            ),
           ),
         ),
       ],
