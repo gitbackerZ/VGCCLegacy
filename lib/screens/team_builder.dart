@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../services/pokeapi_service.dart';
 import '../services/stat_calculator.dart';
 import '../services/team_text_codec.dart';
+import '../services/team_file_storage.dart';
 import '../data/natures.dart';
 import '../models/team_member.dart';
 import '../models/pokemon_details.dart';
@@ -26,6 +27,7 @@ class TeamBuilderScreen extends StatefulWidget {
 
 class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
   final _service = PokeApiService();
+  final _fileStorage = TeamFileStorage();
   final _searchController = TextEditingController();
   final _searchFocusNode = FocusNode();
   static const _storageKey = 'saved_team';
@@ -36,6 +38,9 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
 
   final Map<int, List<String>> _movesCache = {};
   final Map<int, List<Map<String, dynamic>>> _abilitiesCache = {};
+  final Map<int, PokemonDetails> _detailsCache = {};
+  final Set<int> _detailsLoading = {};
+  final Set<int> _megaActive = {};
 
   final Map<int, String?> _activePanels = {};
   final Set<int> _collapsedCards = {};
@@ -222,9 +227,7 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
       final rosterJson = await rootBundle.loadString('lib/data/champions_roster.json');
       final roster = json.decode(rosterJson);
       final List<dynamic> allLegal = roster['all_legal'] as List<dynamic>;
-      final List<String> allowed = allLegal
-          .map((entry) => entry['pokeapi'] as String)
-          .toList();
+      final List<String> allowed = allLegal.map((entry) => entry['pokeapi'] as String).toList();
 
       final itemsFuture = _loadValidItemNames();
       await _loadSavedTeam();
@@ -250,8 +253,6 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
     }
   }
 
-  /// Loads the flat list of valid Champions held-item slugs from the local
-  /// items JSON (keys of the "items" map), used for autocomplete + validation.
   Future<List<String>> _loadValidItemNames() async {
     final itemsJson = await rootBundle.loadString('lib/data/champions_items.json');
     final decoded = json.decode(itemsJson);
@@ -277,9 +278,7 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
   void _filter(String query) {
     final q = query.trim().toLowerCase();
     setState(() {
-      _filtered = q.isEmpty
-          ? []
-          : _allSpecies.where((p) => p.toLowerCase().contains(q)).toList();
+      _filtered = q.isEmpty ? [] : _allSpecies.where((p) => p.toLowerCase().contains(q)).toList();
     });
   }
 
@@ -291,14 +290,55 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
     final spaced = q.replaceAll('-', ' ');
     for (final item in pool) {
       final clean = item.toLowerCase();
-      if (clean == q ||
-          clean == slug ||
-          clean == spaced ||
-          clean.replaceAll('-', ' ') == spaced) {
+      if (clean == q || clean == slug || clean == spaced || clean.replaceAll('-', ' ') == spaced) {
         return clean;
       }
     }
     return null;
+  }
+
+  /// Loads (or refreshes) the display details for a card — base form
+  /// normally, or the resolved Mega form if that index has Mega toggled on.
+  Future<void> _refreshDetails(int index) async {
+    if (index >= _team.length) return;
+    final member = _team[index];
+    try {
+      PokemonDetails details;
+      if (_megaActive.contains(index)) {
+        final activeMega = await _resolveActiveMega(member);
+        if (activeMega != null) {
+          details = activeMega.value;
+        } else {
+          _megaActive.remove(index);
+          details = await _service.getPokemonDetails(member.name);
+        }
+      } else {
+        details = await _service.getPokemonDetails(member.name);
+      }
+      if (!mounted) return;
+      setState(() => _detailsCache[index] = details);
+    } catch (_) {
+      // Leave existing cached details (if any) in place on failure.
+    }
+  }
+
+  Future<void> _toggleMega(int index) async {
+    final member = _team[index];
+    if (_megaActive.contains(index)) {
+      setState(() => _megaActive.remove(index));
+      _announce('${member.name} reverted from Mega Evolution.');
+      await _refreshDetails(index);
+      return;
+    }
+
+    final activeMega = await _resolveActiveMega(member);
+    if (activeMega == null) {
+      _announce('${member.name} has no valid Mega Stone equipped.');
+      return;
+    }
+    setState(() => _megaActive.add(index));
+    _announce('${member.name} Mega Evolved to ${activeMega.key}.');
+    await _refreshDetails(index);
   }
 
   Future<void> _addToTeam(String name) async {
@@ -314,8 +354,7 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
       final pokedexNumber = data['id'] as int;
 
       if (_team.any((m) => m.pokedexNumber == pokedexNumber)) {
-        _announce(
-            '$selectedFormName shares a Pokédex number with a Pokémon already on your team.');
+        _announce('$selectedFormName shares a Pokédex number with a Pokémon already on your team.');
         return;
       }
 
@@ -355,14 +394,17 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
         genderRate: genderRate,
       );
 
+      int newIndex = -1;
       setState(() {
         _team.add(newMember);
-        _collapsedCards.add(_team.length - 1);
+        newIndex = _team.length - 1;
+        _collapsedCards.add(newIndex);
         _searchController.clear();
         _filtered = [];
       });
       await _saveTeam();
       _announce('$selectedFormName added to your team.');
+      if (newIndex >= 0) unawaited(_refreshDetails(newIndex));
     } catch (e) {
       _announce('Could not add $name. Check the name and try again.');
     } finally {
@@ -388,54 +430,52 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
       _abilitiesCache.remove(index);
       _activePanels.remove(index);
       _collapsedCards.remove(index);
+      _detailsCache.remove(index);
+      _detailsLoading.remove(index);
+      _megaActive.remove(index);
       _disposeEvControllersForIndex(index);
 
-      final newCollapsed = <int>{};
-      for (final i in _collapsedCards) {
-        newCollapsed.add(i > index ? i - 1 : i);
+      Set<int> reKeyIntSet(Set<int> src) => src.map((i) => i > index ? i - 1 : i).toSet();
+      Map<int, T> reKeyMap<T>(Map<int, T> src) {
+        final result = <int, T>{};
+        for (final entry in src.entries) {
+          if (entry.key == index) continue;
+          result[entry.key > index ? entry.key - 1 : entry.key] = entry.value;
+        }
+        return result;
       }
+
+      final newCollapsed = reKeyIntSet(_collapsedCards);
       _collapsedCards
         ..clear()
         ..addAll(newCollapsed);
 
-      final newEvControllers = <int, Map<String, TextEditingController>>{};
-      final newEvFocusNodes = <int, Map<String, FocusNode>>{};
-      for (final entry in _evControllers.entries) {
-        final i = entry.key;
-        if (i == index) continue;
-        final newKey = i > index ? i - 1 : i;
-        newEvControllers[newKey] = entry.value;
-      }
-      for (final entry in _evFocusNodes.entries) {
-        final i = entry.key;
-        if (i == index) continue;
-        final newKey = i > index ? i - 1 : i;
-        newEvFocusNodes[newKey] = entry.value;
-      }
+      final newMega = reKeyIntSet(_megaActive);
+      _megaActive
+        ..clear()
+        ..addAll(newMega);
+
+      final newDetails = reKeyMap(_detailsCache);
+      _detailsCache
+        ..clear()
+        ..addAll(newDetails);
+
+      final newEvControllers = reKeyMap(_evControllers);
       _evControllers
         ..clear()
         ..addAll(newEvControllers);
+
+      final newEvFocusNodes = reKeyMap(_evFocusNodes);
       _evFocusNodes
         ..clear()
         ..addAll(newEvFocusNodes);
 
-      final newItemControllers = <int, TextEditingController>{};
-      final newItemFocusNodes = <int, FocusNode>{};
-      for (final entry in _itemControllers.entries) {
-        final i = entry.key;
-        if (i == index) continue;
-        final newKey = i > index ? i - 1 : i;
-        newItemControllers[newKey] = entry.value;
-      }
-      for (final entry in _itemFocusNodes.entries) {
-        final i = entry.key;
-        if (i == index) continue;
-        final newKey = i > index ? i - 1 : i;
-        newItemFocusNodes[newKey] = entry.value;
-      }
+      final newItemControllers = reKeyMap(_itemControllers);
       _itemControllers
         ..clear()
         ..addAll(newItemControllers);
+
+      final newItemFocusNodes = reKeyMap(_itemFocusNodes);
       _itemFocusNodes
         ..clear()
         ..addAll(newItemFocusNodes);
@@ -474,6 +514,7 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
     setState(() => _team[index].heldItem = cleanItem.isEmpty ? null : cleanItem);
     await _saveTeam();
     _announce('${_team[index].name} is now holding ${cleanItem.isEmpty ? "no item" : cleanItem}.');
+    await _refreshDetails(index);
   }
 
   void _togglePanel(int index, String panelName) async {
@@ -512,21 +553,26 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
   Future<void> _setMove(int teamIndex, int moveSlot, String? move) async {
     setState(() => _team[teamIndex].moves[moveSlot] = move);
     await _saveTeam();
+    _announce(
+        '${_team[teamIndex].name}\'s move slot ${moveSlot + 1} set to ${move ?? "None"}.');
   }
 
   Future<void> _setNature(int index, String nature) async {
     setState(() => _team[index].nature = nature);
     await _saveTeam();
+    _announce('${_team[index].name}\'s nature set to $nature.');
   }
 
   Future<void> _setAbility(int index, String ability) async {
     setState(() => _team[index].ability = ability);
     await _saveTeam();
+    _announce('${_team[index].name}\'s ability set to $ability.');
   }
 
   Future<void> _setGender(int index, String gender) async {
     setState(() => _team[index].gender = gender);
     await _saveTeam();
+    _announce('${_team[index].name}\'s gender set to $gender.');
   }
 
   Future<void> _setEv(int index, String stat, int value) async {
@@ -538,6 +584,7 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
 
     setState(() => member.evs[stat] = finalValue);
     await _saveTeam();
+    _announce('${member.name}\'s $stat EVs set to $finalValue.');
   }
 
   bool _isValidMegaItem(String heldItem, String formKey) {
@@ -560,10 +607,13 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
     }
   }
 
+<<<<<<< HEAD
   /// Resolves the active Mega form (if any) purely from held item, using
   /// the game-rule string match in [_isValidMegaItem]. Mega form details
   /// (stats/ability/types/height/weight) come from the service's cached
   /// pipeline — same as any base form, no extra item-lookup query needed.
+=======
+>>>>>>> branch 'main' of https://github.com/gitbackerZ/VGCCLegacy
   Future<MapEntry<String, PokemonDetails>?> _resolveActiveMega(TeamMember member) async {
     final heldItem = (member.heldItem ?? '').toLowerCase().trim();
     if (heldItem.isEmpty) return null;
@@ -630,11 +680,14 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
     }
   }
 
+<<<<<<< HEAD
   /// Shows the full species info dialog (types, gender rate, height, weight,
   /// abilities, move learn set), including a Mega Evolution section if the
   /// held item currently triggers one. Everything routes through the
   /// service's cached pipeline, so repeat lookups — and any lookup once the
   /// Pokémon has been seen before — work fully offline.
+=======
+>>>>>>> branch 'main' of https://github.com/gitbackerZ/VGCCLegacy
   Future<void> _showPokemonInfo(int index) async {
     _unfocus();
     final member = _team[index];
@@ -650,12 +703,16 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
       }
 
       if (!mounted) return;
+<<<<<<< HEAD
       await showPokemonInfoDialog(
         context,
         details,
         megaDetails: megaDetails,
         megaFormName: megaFormName,
       );
+=======
+      await showPokemonInfoDialog(context, details, megaDetails: megaDetails, megaFormName: megaFormName);
+>>>>>>> branch 'main' of https://github.com/gitbackerZ/VGCCLegacy
     } catch (e) {
       _announce('Could not load info for ${member.name}.');
     } finally {
@@ -710,7 +767,7 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
     }
 
     if (!mounted) return;
-    Navigator.pop(context); // close loading dialog
+    Navigator.pop(context);
 
     final text = TeamTextCodec.encodeTeam(
       _team,
@@ -721,13 +778,18 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
     );
 
     if (!mounted) return;
-    await showExportResultDialog(context, text: text);
+    await showExportResultDialog(
+      context,
+      text: text,
+      storage: _fileStorage,
+      onSaved: _announce,
+    );
     _unfocus();
   }
 
   Future<void> _showImportDialog() async {
     _unfocus();
-    final pastedText = await showImportPasteDialog(context);
+    final pastedText = await showImportPasteDialog(context, _fileStorage);
 
     if (pastedText == null || pastedText.trim().isEmpty) {
       _unfocus();
@@ -758,6 +820,9 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
         _abilitiesCache.clear();
         _activePanels.clear();
         _collapsedCards.clear();
+        _detailsCache.clear();
+        _detailsLoading.clear();
+        _megaActive.clear();
       });
     }
 
@@ -773,10 +838,13 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
           failed++;
           continue;
         }
+        int newIndex = -1;
         setState(() {
           _team.add(member);
-          _collapsedCards.add(_team.length - 1);
+          newIndex = _team.length - 1;
+          _collapsedCards.add(newIndex);
         });
+        if (newIndex >= 0) unawaited(_refreshDetails(newIndex));
         added++;
       } catch (e) {
         failed++;
@@ -810,17 +878,21 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
             Semantics(
               button: true,
               label: 'Export team as text',
-              child: IconButton(
-                icon: const Icon(Icons.upload_outlined),
-                onPressed: _showExportDialog,
+              child: ExcludeSemantics(
+                child: IconButton(
+                  icon: const Icon(Icons.upload_outlined),
+                  onPressed: _showExportDialog,
+                ),
               ),
             ),
             Semantics(
               button: true,
               label: 'Import team from text',
-              child: IconButton(
-                icon: const Icon(Icons.download_outlined),
-                onPressed: _showImportDialog,
+              child: ExcludeSemantics(
+                child: IconButton(
+                  icon: const Icon(Icons.download_outlined),
+                  onPressed: _showImportDialog,
+                ),
               ),
             ),
           ],
@@ -829,20 +901,24 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
-              child: Semantics(
-                label: 'Search Pokémon by name',
-                child: TextField(
-                  controller: _searchController,
-                  focusNode: _searchFocusNode,
-                  autofocus: false,
-                  style: TextStyle(color: AdaptiveFieldTheme.fieldTextColor(context)),
-                  cursorColor: AdaptiveFieldTheme.cursorColor(context),
-                  decoration: AdaptiveFieldTheme.inputDecoration(context, 'Search Pokémon').copyWith(
-                    prefixIcon: Icon(Icons.search, color: AdaptiveFieldTheme.iconColor(context)),
-                    suffixIcon: _searchController.text.isNotEmpty
-                        ? Semantics(
-                            button: true,
-                            label: 'Clear search',
+              // TextField keeps its native semantics here — wrapping a real
+              // form control in ExcludeSemantics removes it from the
+              // accessibility tree entirely, which is why TalkBack couldn't
+              // find the search bar. The labelText ("Search Pokémon") below
+              // is what a screen reader announces.
+              child: TextField(
+                controller: _searchController,
+                focusNode: _searchFocusNode,
+                autofocus: false,
+                style: TextStyle(color: AdaptiveFieldTheme.fieldTextColor(context)),
+                cursorColor: AdaptiveFieldTheme.cursorColor(context),
+                decoration: AdaptiveFieldTheme.inputDecoration(context, 'Search Pokémon').copyWith(
+                  prefixIcon: Icon(Icons.search, color: AdaptiveFieldTheme.iconColor(context)),
+                  suffixIcon: _searchController.text.isNotEmpty
+                      ? Semantics(
+                          button: true,
+                          label: 'Clear search',
+                          child: ExcludeSemantics(
                             child: IconButton(
                               onPressed: () {
                                 _searchController.clear();
@@ -850,34 +926,23 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
                               },
                               icon: Icon(Icons.clear, color: AdaptiveFieldTheme.iconColor(context)),
                             ),
-                          )
-                        : null,
-                  ),
-                  onChanged: _filter,
+                          ),
+                        )
+                      : null,
                 ),
+                onChanged: _filter,
               ),
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12.0),
               child: Align(
                 alignment: Alignment.centerLeft,
-                child: Semantics(
-                  liveRegion: true,
-                  child: Text(
-                    'Your team: ${_team.length} of 6 slots filled',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                  ),
+                child: Text(
+                  'Your team: ${_team.length} of 6 slots filled',
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                 ),
               ),
             ),
-            if (_statusMessage.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 2.0),
-                child: Semantics(
-                  liveRegion: true,
-                  child: Text(_statusMessage, style: const TextStyle(color: Colors.blue, fontSize: 12)),
-                ),
-              ),
             if (_team.isNotEmpty)
               Expanded(
                 flex: 5,
@@ -895,6 +960,24 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
                 onAdd: _addToTeam,
               ),
             ),
+            // Fixed-height status bar pinned to the bottom of the screen so
+            // it never pushes/pulls the member card list above it.
+            Container(
+              width: double.infinity,
+              height: 28,
+              alignment: Alignment.centerLeft,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              child: Semantics(
+                liveRegion: true,
+                child: Text(
+                  _statusMessage.isEmpty ? '' : _statusMessage,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 12),
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -903,11 +986,22 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
 
   Widget _buildTeamCard(int index) {
     final member = _team[index];
+
+    if (_detailsCache[index] == null && !_detailsLoading.contains(index)) {
+      _detailsLoading.add(index);
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        await _refreshDetails(index);
+        _detailsLoading.remove(index);
+      });
+    }
+
     return TeamCard(
       member: member,
       index: index,
       isCollapsed: _collapsedCards.contains(index),
       activePanel: _activePanels[index],
+      details: _detailsCache[index],
+      isMegaActive: _megaActive.contains(index),
       moveOptions: _movesCache[index],
       abilityOptions: _abilitiesCache[index],
       cachedValidItems: _cachedValidItems ?? const <String>[],
@@ -920,6 +1014,7 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
       onTogglePanel: (panel) => _togglePanel(index, panel),
       onShowStats: () => _showStats(index),
       onShowInfo: () => _showPokemonInfo(index),
+      onToggleMega: () => _toggleMega(index),
       onSetMove: (slot, move) => _setMove(index, slot, move),
       onSetGender: (gender) => _setGender(index, gender),
       onSetAbility: (ability) => _setAbility(index, ability),
@@ -931,3 +1026,5 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
     );
   }
 }
+
+void unawaited(Future<void> future) {}

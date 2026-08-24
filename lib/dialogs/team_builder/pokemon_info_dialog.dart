@@ -30,8 +30,13 @@ Future<void> showPokemonInfoDialog(
         ...d.baseStats.entries.map((e) => Text('${e.key}: ${e.value}')),
         const SizedBox(height: 8),
         const Text('Abilities', style: TextStyle(fontWeight: FontWeight.bold)),
+<<<<<<< HEAD
         ...d.abilities.map(
             (a) => Text('${a['name']}${a['isHidden'] == true ? ' (Hidden)' : ''}')),
+=======
+        ...d.abilities
+            .map((a) => Text('${a['name']}${a['isHidden'] == true ? ' (Hidden)' : ''}')),
+>>>>>>> branch 'main' of https://github.com/gitbackerZ/VGCCLegacy
       ],
     );
   }
@@ -61,6 +66,7 @@ Future<void> showPokemonInfoDialog(
               Text('Move Learn Set (${details.moveLearnSet.length})',
                   style: const TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 4),
+<<<<<<< HEAD
               if (details.moveLearnSet.isEmpty)
                 const Text(
                   'No moves found.',
@@ -71,6 +77,12 @@ Future<void> showPokemonInfoDialog(
                   details.moveLearnSet.join(', '),
                   style: const TextStyle(fontSize: 12),
                 ),
+=======
+              Text(
+                details.moveLearnSet.isEmpty ? 'No moves found.' : details.moveLearnSet.join(', '),
+                style: const TextStyle(fontSize: 12),
+              ),
+>>>>>>> branch 'main' of https://github.com/gitbackerZ/VGCCLegacy
             ],
           ),
         ),
@@ -79,10 +91,12 @@ Future<void> showPokemonInfoDialog(
         Semantics(
           button: true,
           label: 'Close info dialog for ${details.name}',
-          child: FilledButton(
-            style: AdaptiveFieldTheme.filledButtonStyle(context),
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
+          child: ExcludeSemantics(
+            child: FilledButton(
+              style: AdaptiveFieldTheme.filledButtonStyle(context),
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Close'),
+            ),
           ),
         ),
       ],
