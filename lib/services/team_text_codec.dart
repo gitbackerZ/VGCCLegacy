@@ -6,8 +6,16 @@ class TeamTextCodec {
     Map<int, Map<String, int>> baseStatsByIndex,
     Map<int, Map<String, int>?> megaStatsByIndex,
     Map<int, String?> megaFormNameByIndex,
-    Map<int, String?> megaAbilityByIndex,
-  ) {
+    Map<int, String?> megaAbilityByIndex, {
+    Map<int, List<String>> typesByIndex = const {},
+    Map<int, double> heightByIndex = const {},
+    Map<int, double> weightByIndex = const {},
+    Map<int, List<String>?> megaTypesByIndex = const {},
+    Map<int, double?> megaHeightByIndex = const {},
+    Map<int, double?> megaWeightByIndex = const {},
+  }) {
+    String capitalize(String s) => s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
+
     final buffer = StringBuffer();
     for (int i = 0; i < team.length; i++) {
       final m = team[i];
@@ -21,6 +29,18 @@ class TeamTextCodec {
       buffer.writeln('Moves: $moveList');
       final evList = m.evs.entries.map((e) => '${e.key}=${e.value}').join(', ');
       buffer.writeln('EVs: $evList');
+
+      final types = typesByIndex[i];
+      if (types != null && types.isNotEmpty) {
+        buffer.writeln('Type: ${types.map(capitalize).join('/')}');
+      }
+
+      final height = heightByIndex[i];
+      final weight = weightByIndex[i];
+      if (height != null && weight != null) {
+        buffer.writeln(
+            'Height: ${height.toStringAsFixed(1)} m   Weight: ${weight.toStringAsFixed(1)} kg');
+      }
 
       final baseStats = baseStatsByIndex[i];
       if (baseStats != null) {
@@ -36,6 +56,19 @@ class TeamTextCodec {
         if (megaAbility != null) {
           buffer.writeln('Mega Form Ability: $megaAbility');
         }
+
+        final megaTypes = megaTypesByIndex[i];
+        if (megaTypes != null && megaTypes.isNotEmpty) {
+          buffer.writeln('Mega Type: ${megaTypes.map(capitalize).join('/')}');
+        }
+
+        final megaHeight = megaHeightByIndex[i];
+        final megaWeight = megaWeightByIndex[i];
+        if (megaHeight != null && megaWeight != null) {
+          buffer.writeln(
+              'Mega Height: ${megaHeight.toStringAsFixed(1)} m   Mega Weight: ${megaWeight.toStringAsFixed(1)} kg');
+        }
+
         final megaStatList = megaStats.entries.map((e) => '${e.key}=${e.value}').join(', ');
         buffer.writeln('Final Stats (Mega Form): $megaStatList');
       }
@@ -47,8 +80,9 @@ class TeamTextCodec {
   }
 
   /// Parses pasted text back into a list of TeamMember objects.
-  /// Note: "Final Stats" and "Mega Form" lines are informational only on import
-  /// (they are recalculated live in-app) and are safely ignored by the parser.
+  /// Note: "Type", "Height", "Final Stats", and "Mega Form"/"Mega Type"/
+  /// "Mega Height" lines are informational only on import (they are
+  /// recalculated/refetched live in-app) and are safely ignored by the parser.
   static List<TeamMember> decodeTeam(String text) {
     final List<TeamMember> result = [];
     final blocks = text.split(RegExp(r'===\s*POKEMON\s+\d+\s*==='));
@@ -71,6 +105,10 @@ class TeamTextCodec {
         if (line.startsWith('===')) continue;
         if (line.startsWith('Final Stats')) continue; // informational only
         if (line.startsWith('Mega Form')) continue; // informational only
+        if (line.startsWith('Mega Type')) continue; // informational only
+        if (line.startsWith('Mega Height')) continue; // informational only
+        if (line.startsWith('Type:')) continue; // informational only
+        if (line.startsWith('Height:')) continue; // informational only
 
         if (line.startsWith('Species:')) {
           species = line.substring('Species:'.length).trim();
