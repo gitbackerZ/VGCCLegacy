@@ -68,8 +68,8 @@ class TeamCard extends StatelessWidget {
     required this.onClearHeldItem,
   });
 
-  /// The ability shown in the header — the Mega form's ability when Mega is
-  /// active and resolved, otherwise the member's configured ability.
+  /// The ability shown in the header/body — the Mega form's ability when
+  /// Mega is active and resolved, otherwise the member's configured ability.
   String? get _displayedAbility {
     if (isMegaActive && details != null && details!.abilities.isNotEmpty) {
       return details!.abilities.first['name'] as String;
@@ -95,134 +95,100 @@ class TeamCard extends StatelessWidget {
     );
   }
 
-  // ---- Header (red) — always visible ----
+  // ---- Header (red) — always visible. Single line: Name  Type/Type ----
   Widget _buildHeader(BuildContext context) {
     final types = details?.types ?? const <String>[];
-    final typesText = types.isEmpty ? '—' : types.map((t) => t.toUpperCase()).join(' / ');
-    final abilityText = _displayedAbility ?? '—';
-    final itemText = member.heldItem ?? '—';
+    final typesText = types.isEmpty ? '—' : types.map((t) => t.toUpperCase()).join('/');
 
     return Container(
       color: AdaptiveFieldTheme.pokeballRed,
       padding: const EdgeInsets.fromLTRB(10, 6, 6, 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Semantics(
-                  label:
-                      '${member.name}, dex number ${member.pokedexNumber}${isMegaActive ? ", Mega evolved" : ""}',
-                  child: ExcludeSemantics(
-                    child: Text(
-                      member.name.toUpperCase(),
-                      style: const TextStyle(
-                          fontWeight: FontWeight.bold, fontSize: 18, color: AdaptiveFieldTheme.headerText),
-                      overflow: TextOverflow.ellipsis,
+          Expanded(
+            child: Semantics(
+              label:
+                  '${member.name}, types $typesText${isMegaActive ? ", Mega evolved" : ""}',
+              child: ExcludeSemantics(
+                child: Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        member.name.toUpperCase(),
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: AdaptiveFieldTheme.headerText),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                        softWrap: false,
+                      ),
                     ),
-                  ),
-                ),
-              ),
-              Semantics(
-                button: true,
-                label: isMegaActive
-                    ? 'Revert ${member.name} from Mega Evolution'
-                    : 'Mega Evolve ${member.name}',
-                selected: isMegaActive,
-                child: ExcludeSemantics(
-                  child: IconButton(
-                    icon: Icon(Icons.auto_awesome,
-                        size: 20, color: isMegaActive ? Colors.amberAccent : Colors.white70),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-                    onPressed: onToggleMega,
-                  ),
-                ),
-              ),
-              Semantics(
-                button: true,
-                label: isCollapsed ? 'Expand ${member.name} details' : 'Collapse ${member.name} details',
-                child: ExcludeSemantics(
-                  child: IconButton(
-                    icon: Icon(isCollapsed ? Icons.expand_more : Icons.expand_less,
-                        size: 22, color: AdaptiveFieldTheme.headerText),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-                    onPressed: onToggleCollapsed,
-                  ),
-                ),
-              ),
-              Semantics(
-                button: true,
-                label: 'Remove ${member.name} from team',
-                child: ExcludeSemantics(
-                  child: IconButton(
-                    icon: const Icon(Icons.delete_outline, size: 20, color: Colors.white),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-                    onPressed: onRemove,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 2),
-          // Row 1 (large): Pokémon name repeated is redundant with the title
-          // above, so this row instead pairs Types opposite the name slot —
-          // Types large, matching the name's visual weight.
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Semantics(
-                  label: 'Types: $typesText',
-                  child: ExcludeSemantics(
-                    child: Text(
-                      typesText,
-                      style: const TextStyle(
-                          color: AdaptiveFieldTheme.headerText,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600),
-                      overflow: TextOverflow.ellipsis,
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        typesText,
+                        style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: AdaptiveFieldTheme.headerText),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                        softWrap: false,
+                      ),
                     ),
-                  ),
+                  ],
                 ),
               ),
-            ],
+            ),
           ),
-          const SizedBox(height: 4),
-          // Row 2 (small): Held Item | Ability
-          Row(
-            children: [
-              Expanded(
-                child: Semantics(
-                  label: 'Held item: $itemText',
-                  child: ExcludeSemantics(
-                    child: Text(itemText,
-                        style: const TextStyle(color: AdaptiveFieldTheme.headerText, fontSize: 12),
-                        overflow: TextOverflow.ellipsis),
-                  ),
-                ),
+          Semantics(
+            button: true,
+            label: isMegaActive
+                ? 'Revert ${member.name} from Mega Evolution'
+                : 'Mega Evolve ${member.name}',
+            selected: isMegaActive,
+            child: ExcludeSemantics(
+              child: IconButton(
+                icon: Icon(Icons.auto_awesome,
+                    size: 20, color: isMegaActive ? Colors.amberAccent : Colors.white70),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                onPressed: onToggleMega,
               ),
-              Expanded(
-                child: Semantics(
-                  label: 'Ability: $abilityText',
-                  child: ExcludeSemantics(
-                    child: Text(abilityText,
-                        style: const TextStyle(color: AdaptiveFieldTheme.headerText, fontSize: 12),
-                        overflow: TextOverflow.ellipsis),
-                  ),
-                ),
+            ),
+          ),
+          Semantics(
+            button: true,
+            label: isCollapsed ? 'Expand ${member.name} details' : 'Collapse ${member.name} details',
+            child: ExcludeSemantics(
+              child: IconButton(
+                icon: Icon(isCollapsed ? Icons.expand_more : Icons.expand_less,
+                    size: 22, color: AdaptiveFieldTheme.headerText),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                onPressed: onToggleCollapsed,
               ),
-            ],
+            ),
+          ),
+          Semantics(
+            button: true,
+            label: 'Remove ${member.name} from team',
+            child: ExcludeSemantics(
+              child: IconButton(
+                icon: const Icon(Icons.delete_outline, size: 20, color: Colors.white),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                onPressed: onRemove,
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  // ---- Body (dark gray) — collapsible; rest of the Pokémon's info ----
+  // ---- Body (dark gray) — collapsible; ALL remaining Pokémon info ----
   Widget _buildBody(BuildContext context) {
     final nonzeroEvs = member.evs.entries.where((e) => e.value > 0);
     final evsText = nonzeroEvs.isEmpty
@@ -232,6 +198,8 @@ class TeamCard extends StatelessWidget {
     final movesText = moves.isEmpty ? '—' : moves;
     final heightText = details != null ? '${details!.heightMeters.toStringAsFixed(1)} m' : '—';
     final weightText = details != null ? '${details!.weightKilograms.toStringAsFixed(1)} kg' : '—';
+    final itemText = member.heldItem ?? '—';
+    final abilityText = _displayedAbility ?? '—';
 
     return Container(
       color: AdaptiveFieldTheme.pokeballDarkGray,
@@ -239,6 +207,31 @@ class TeamCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Row(
+            children: [
+              Expanded(
+                child: Semantics(
+                  label: 'Held item: $itemText',
+                  child: ExcludeSemantics(
+                    child: Text(itemText,
+                        style: const TextStyle(color: AdaptiveFieldTheme.bodyText, fontSize: 13),
+                        overflow: TextOverflow.ellipsis),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Semantics(
+                  label: 'Ability: $abilityText',
+                  child: ExcludeSemantics(
+                    child: Text(abilityText,
+                        style: const TextStyle(color: AdaptiveFieldTheme.bodyText, fontSize: 13),
+                        overflow: TextOverflow.ellipsis),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
           Row(
             children: [
               Expanded(
@@ -469,9 +462,7 @@ class _MovesEditor extends StatelessWidget {
                         // DropdownButtonFormField provides its own accessible
                         // semantics (field label + current value + "button"
                         // role) — do not wrap it in ExcludeSemantics or
-                        // TalkBack/VoiceOver will skip it entirely. The
-                        // labelText below already carries the slot number,
-                        // which is enough context for screen readers.
+                        // TalkBack/VoiceOver will skip it entirely.
                         return DropdownButtonFormField<String>(
                           initialValue: member.moves[slot],
                           isExpanded: true,
@@ -557,9 +548,9 @@ class _EvsEditor extends StatelessWidget {
                       if (statIndex >= stats.length) return const SizedBox.shrink();
                       final stat = stats[statIndex];
                       // TextField carries its own semantics (edit text +
-                      // current value); the floating labelText below ("HP",
-                      // "Atk", etc.) is what makes the stat name announced —
-                      // do not exclude/replace this widget's semantics.
+                      // current value); the floating labelText below is
+                      // what makes the stat name ("HP", "Atk", etc.)
+                      // announced — do not exclude this widget's semantics.
                       return TextField(
                         controller: controllers[stat],
                         focusNode: focusNodes[stat],
