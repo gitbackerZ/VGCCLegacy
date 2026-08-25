@@ -607,13 +607,10 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
     }
   }
 
-<<<<<<< HEAD
   /// Resolves the active Mega form (if any) purely from held item, using
   /// the game-rule string match in [_isValidMegaItem]. Mega form details
   /// (stats/ability/types/height/weight) come from the service's cached
   /// pipeline — same as any base form, no extra item-lookup query needed.
-=======
->>>>>>> branch 'main' of https://github.com/gitbackerZ/VGCCLegacy
   Future<MapEntry<String, PokemonDetails>?> _resolveActiveMega(TeamMember member) async {
     final heldItem = (member.heldItem ?? '').toLowerCase().trim();
     if (heldItem.isEmpty) return null;
@@ -680,14 +677,11 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
     }
   }
 
-<<<<<<< HEAD
   /// Shows the full species info dialog (types, gender rate, height, weight,
   /// abilities, move learn set), including a Mega Evolution section if the
   /// held item currently triggers one. Everything routes through the
   /// service's cached pipeline, so repeat lookups — and any lookup once the
   /// Pokémon has been seen before — work fully offline.
-=======
->>>>>>> branch 'main' of https://github.com/gitbackerZ/VGCCLegacy
   Future<void> _showPokemonInfo(int index) async {
     _unfocus();
     final member = _team[index];
@@ -703,16 +697,12 @@ class _TeamBuilderScreenState extends State<TeamBuilderScreen> {
       }
 
       if (!mounted) return;
-<<<<<<< HEAD
       await showPokemonInfoDialog(
         context,
         details,
         megaDetails: megaDetails,
         megaFormName: megaFormName,
       );
-=======
-      await showPokemonInfoDialog(context, details, megaDetails: megaDetails, megaFormName: megaFormName);
->>>>>>> branch 'main' of https://github.com/gitbackerZ/VGCCLegacy
     } catch (e) {
       _announce('Could not load info for ${member.name}.');
     } finally {
